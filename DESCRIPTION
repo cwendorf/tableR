@@ -1,0 +1,15 @@
+Package: tableR
+Type: Package
+Title: Flexible Table Formatting and Styling in R
+Version: 0.1.0
+Authors@R: 
+    person("Craig", "Wendorf", email = "cwendorf@uwsp.edu", role = c("aut", "cre"))
+Description: 
+    Provides functions to format and style data frames as neatly aligned tables
+    for console output, Markdown documents, and APA-style reports. Supports 
+    numeric formatting, column alignment, custom widths, captions, and saving 
+    formatted tables to text files.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
