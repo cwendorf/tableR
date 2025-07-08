@@ -1,6 +1,7 @@
 # tableR
 ## Examples
 
+source("http://raw.githubusercontent.com/cwendorf/tableR/main/source-tableR.R")
 
 # Example 1: Simple Numeric Table
 df1 <- data.frame(
@@ -37,18 +38,18 @@ df4 <- data.frame(
 rownames(df4) <- c("2023", "2024")
 format_table(df4,
             digits = c(0, 0, 3),
-            col_widths = c(12, 10, 10),
-            col_align = c("left", "right", "center"))
+            width = c(12, 10, 10),
+            align = c("left", "right", "center"))
 
 # Example 5: Center Alignment and Truncation
-df6 <- data.frame(
+df5 <- data.frame(
   Label = c("SuperLongLabel", "Short"),
   Value = c(3.14159, 2.71828)
 )
-format_table(df6,
+format_table(df5,
             digits = 2,
-            col_widths = c(12, 12),
-            col_align = c("center", "right"))
+            width = c(12, 12),
+            align = c("center", "right"))
 
 
 
@@ -121,7 +122,6 @@ df |>
 ## save
 
 getwd()
-setwd("C:/Users/cwendorf/Desktop")
 
 df |> 
   format_table(digits = 2) |> 
