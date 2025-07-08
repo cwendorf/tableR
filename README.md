@@ -25,6 +25,10 @@ If you do not wish a full install, the latest functions can be made available us
 source("http://raw.githubusercontent.com/cwendorf/tableR/main/source-tableR.R")
 ```
 
+### Usage
+
+- [tableR Workflow](./docs/Workflow.md) - Demonstrates the main formatting, styling, and exporting/saving features
+
 ### Contact Me
 
 - GitHub Issues: [https://github.com/cwendorf/tableR/issues](https://github.com/cwendorf/tableR/issues) 
