@@ -1,4 +1,4 @@
-# tableR 
+# tableR
 ## Initial Examples
 
 # Load the tableR source
