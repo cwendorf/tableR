@@ -54,7 +54,7 @@ The `tableR` package provides a simple, structured workflow to create formatted 
 
 This modular workflow is ideal for clean, readable, and reproducible tables.
 
-### Step 1: Provide the Data
+### Step 1 - Provide the Data
 
 Obtain the data tables from other packages or enter them directly.
 
@@ -77,7 +77,7 @@ rownames(df_mixed) <- c("Alice", "Bob")
 df_mixed
 ```
 
-### Step 2: Format the Table
+### Step 2 - Format the Table
 
 After obtaining the table, use `format_table()` to customize digits, width, and alignment.
 
@@ -127,9 +127,9 @@ format_table(df_trunc,
              align = c("center", "right"))
 ```
 
-### Step 3: Style the Table
+### Step 3 - Style the Table
 
-After formatting, apply styling using `style_console()`, `style_markdown()`, or `style_apa()`.
+After formatting, apply styling using `style_console()`, `style_markdown()`, or `style_apa()`. Spacing of the output vertically can be specified.
 
 ```{r}
 # Create a data frame
@@ -148,7 +148,7 @@ df_stats |>
   style_console(caption = "Table 1: Summary", space = c(1, 1))
 ```
 
-```{r, results='asis'}
+```{r}
 # Markdown styling
 df_stats |>
   format_table(digits = c(1, 4, 0)) |>
@@ -162,7 +162,7 @@ df_stats |>
   style_apa("Table 1\nDescriptive Statistics", space = 3)
 ```
 
-### Step 4: Save the Output
+### Step 4 - Save the Output
 
 If desired, the formatted and styled output can be exported to a file. (You may find it helpful to `getwd()' first to find where you files will be saved.)
 
@@ -190,7 +190,7 @@ df_stats |>
   save_output(file = "my_table.md")
 ```
 
-### Addendum: Working with Other Data Types
+### Addendum - Working with Other Data Types
 
 `format_table()` works with a variety of R object types beyond data frames. This permits the ability to perform the above actions for results from a wide variety of packages.
 

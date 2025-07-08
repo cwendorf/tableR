@@ -1,12 +1,12 @@
 ## tableR Workflow
 
 - [Introduction](#introduction)
-- [Step 1: Provide the Data](#step-1:-provide-the-data)
-- [Step 2: Format the Table](#step-2:-format-the-table)
-- [Step 3: Style the Table](#step-3:-style-the-table)
-- [Step 4: Save the Output](#step-4:-save-the-output)
-- [Addendum: Working with Other Data
-  Types](#addendum:-working-with-other-data-types)
+- [Step 1 - Provide the Data](#step-1---provide-the-data)
+- [Step 2 - Format the Table](#step-2---format-the-table)
+- [Step 3 - Style the Table](#step-3---style-the-table)
+- [Step 4 - Save the Output](#step-4---save-the-output)
+- [Addendum - Working with Other Data
+  Types](#addendum---working-with-other-data-types)
 
 ------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ formatted and styled tables in R. The workflow follows this progression:
 This modular workflow is ideal for clean, readable, and reproducible
 tables.
 
-### Step 1: Provide the Data
+### Step 1 - Provide the Data
 
 Obtain the data tables from other packages or enter them directly.
 
@@ -54,7 +54,7 @@ df_mixed
     ## Alice 98.456   TRUE
     ## Bob   77.800  FALSE
 
-### Step 2: Format the Table
+### Step 2 - Format the Table
 
 After obtaining the table, use `format_table()` to customize digits,
 width, and alignment.
@@ -135,10 +135,11 @@ format_table(df_trunc,
     ## 2    Short             2.72
     ## 
 
-### Step 3: Style the Table
+### Step 3 - Style the Table
 
 After formatting, apply styling using `style_console()`,
-`style_markdown()`, or `style_apa()`.
+`style_markdown()`, or `style_apa()`. Spacing of the output vertically
+can be specified.
 
 ``` r
 # Create a data frame
@@ -172,12 +173,15 @@ df_stats |>
   style_markdown(caption = "### Table 1: Summary", space = c(1, 2))
 ```
 
-### Table 1: Summary
-
-|         |    M |        SD |    N |
-|:--------|-----:|----------:|-----:|
-| Group 1 | 12.3 |    0.0001 | 1000 |
-| Group 2 |  7.9 | 5000.1000 |  315 |
+    ## 
+    ## ### Table 1: Summary
+    ## 
+    ## |         |    M |        SD |    N |
+    ## | :------ | ---: | --------: | ---: |
+    ## | Group 1 | 12.3 |    0.0001 | 1000 |
+    ## | Group 2 |  7.9 | 5000.1000 |  315 |
+    ## 
+    ## 
 
 ``` r
 # APA-style output
@@ -202,7 +206,7 @@ df_stats |>
     ## 
     ## 
 
-### Step 4: Save the Output
+### Step 4 - Save the Output
 
 If desired, the formatted and styled output can be exported to a file.
 (You may find it helpful to \`getwd()’ first to find where you files
@@ -232,7 +236,7 @@ df_stats |>
   save_output(file = "my_table.md")
 ```
 
-### Addendum: Working with Other Data Types
+### Addendum - Working with Other Data Types
 
 `format_table()` works with a variety of R object types beyond data
 frames. This permits the ability to perform the above actions for
