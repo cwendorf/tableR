@@ -7,7 +7,7 @@
 
 ### Overview
 
-`tableR` is an R package designed to simplify the process of formatting and styling data frames into neatly organized tables for console output, Markdown documents, and APA-style reports.
+`tableR` is an R package designed to simplify the process of formatting and styling data frames into neatly organized tables for console output, Markdown documents, and APA-style reports. It is designed to work with the output from a wide variety of packages.
 
 ### Installation
 
@@ -33,4 +33,4 @@ source("http://raw.githubusercontent.com/cwendorf/tableR/main/source-tableR.R")
 
 ### Citation
 
-Wendorf, C.A. (2025). *tableR: Flexible Table Formatting and Styling* [R Package]. [https://github.com/cwendorf/tableR](https://github.com/cwendorf/tableR)
+Wendorf, C.A. (2025). *tableR: Flexible table formatting and styling* [R Package]. [https://github.com/cwendorf/tableR](https://github.com/cwendorf/tableR)
