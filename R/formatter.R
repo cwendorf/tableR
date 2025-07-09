@@ -21,13 +21,19 @@
 #' format_table(df, digits = 2)
 #'
 #' @export
+#' 
 format_table <- function(x, 
                          digits = 2, 
                          signif = FALSE, 
                          zeros = TRUE,
                          width = NULL,
                          align = "right") {
-  if (!is.data.frame(x)) x <- as.data.frame(x)
+  
+  # Strip classes and convert to data.frame
+  if (!is.data.frame(x)) {
+    # Remove all classes, convert matrix or other to data.frame
+    x <- as.data.frame(unclass(x))
+  }
   
   n_cols <- ncol(x)
 
@@ -62,6 +68,7 @@ format_table <- function(x,
     class = "formatted"
   )
 }
+
 
 #' Print a Formatted Table
 #'
