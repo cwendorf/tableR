@@ -1,24 +1,25 @@
 # tableR
 ## Format Output
 
-#' Format a Data Frame for Aligned Printing
+#' Format a Data Frame for Aligned Printing (with Padding)
 #'
 #' Formats a data frame into a list structure with aligned, width-controlled,
-#' and optionally rounded or significant numeric columns, suitable for custom
+#' padded, and optionally rounded or significant numeric columns, suitable for custom
 #' table rendering or printing.
 #'
 #' @param x A data frame or object coercible to a data frame.
 #' @param digits Integer or numeric vector. Number of decimal places (or significant digits if `signif = TRUE`) to use for numeric columns. If a single value, it is recycled for all columns.
 #' @param signif Logical. If `TRUE`, numbers are formatted using significant digits instead of decimal places.
 #' @param zeros Logical. If `TRUE`, retains trailing zeros in numeric formatting.
-#' @param width NULL, single integer, or integer vector. Column widths to apply. If `NULL`, widths are inferred from content and column names.
+#' @param width NULL, single integer, or integer vector. Column widths to apply before padding. If `NULL`, widths are inferred from content and column names.
+#' @param padding Integer. Extra spaces to pad to each column's width.
 #' @param align Character string or character vector. Text alignment per column: `"left"`, `"center"`, or `"right"`. Recycled to match number of columns if needed.
 #'
 #' @return An object of class `"formatted"`: a list with elements `header`, `rows`, `row_names`, `align`, and `width`. This object is suitable for custom printing or table formatting.
 #'
 #' @examples
 #' df <- data.frame(a = c(1.234, 5.678), b = c("foo", "bar"))
-#' format_table(df, digits = 2)
+#' format_table(df, digits = 2, padding = 2)
 #'
 #' @export
 #' 
@@ -27,11 +28,11 @@ format_table <- function(x,
                          signif = FALSE, 
                          zeros = TRUE,
                          width = NULL,
+                         padding = 1,
                          align = "right") {
   
   # Strip classes and convert to data.frame
   if (!is.data.frame(x)) {
-    # Remove all classes, convert matrix or other to data.frame
     x <- as.data.frame(unclass(x))
   }
   
@@ -53,6 +54,8 @@ format_table <- function(x,
   } else if (length(width) == 1) {
     width <- rep(width, n_cols)
   }
+  
+  width <- width + (padding * 2)
 
   if (length(align) == 1) align <- rep(align, n_cols)
   if (length(align) != n_cols) stop("Length of 'align' must match ncol(x)")

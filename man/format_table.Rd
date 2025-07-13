@@ -2,7 +2,7 @@
 % Please edit documentation in R/formatter.R
 \name{format_table}
 \alias{format_table}
-\title{Format a Data Frame for Aligned Printing}
+\title{Format a Data Frame for Aligned Printing (with Padding)}
 \usage{
 format_table(
   x,
@@ -10,6 +10,7 @@ format_table(
   signif = FALSE,
   zeros = TRUE,
   width = NULL,
+  padding = 1,
   align = "right"
 )
 }
@@ -22,7 +23,9 @@ format_table(
 
 \item{zeros}{Logical. If `TRUE`, retains trailing zeros in numeric formatting.}
 
-\item{width}{NULL, single integer, or integer vector. Column widths to apply. If `NULL`, widths are inferred from content and column names.}
+\item{width}{NULL, single integer, or integer vector. Column widths to apply before padding. If `NULL`, widths are inferred from content and column names.}
+
+\item{padding}{Integer. Extra spaces to pad to each column's width.}
 
 \item{align}{Character string or character vector. Text alignment per column: `"left"`, `"center"`, or `"right"`. Recycled to match number of columns if needed.}
 }
@@ -31,11 +34,11 @@ An object of class `"formatted"`: a list with elements `header`, `rows`, `row_na
 }
 \description{
 Formats a data frame into a list structure with aligned, width-controlled,
-and optionally rounded or significant numeric columns, suitable for custom
+padded, and optionally rounded or significant numeric columns, suitable for custom
 table rendering or printing.
 }
 \examples{
 df <- data.frame(a = c(1.234, 5.678), b = c("foo", "bar"))
-format_table(df, digits = 2)
+format_table(df, digits = 2, padding = 2)
 
 }
