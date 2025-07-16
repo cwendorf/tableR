@@ -2,25 +2,26 @@
 % Please edit documentation in R/styler.R
 \name{style_apa}
 \alias{style_apa}
-\title{Print a formatted table object in APA style}
+\title{Style a 'tableR' Object as an APA-Style Table}
 \usage{
 style_apa(formatted, caption = NULL, space = c(1, 1))
 }
 \arguments{
-\item{formatted}{A formatted table or list of formatted tables.}
+\item{formatted}{A `tableR` object or `tableR_list` containing one or more tables to format.
+Must inherit from class `"tableR"`.}
 
-\item{caption}{Caption(s) for the table(s).}
+\item{caption}{Optional character string to override the table caption. If `NULL`,
+the caption attribute from the `formatted` object is used if available.}
 
-\item{space}{Numeric vector of length 2 for spacing before and after output.}
+\item{space}{Numeric vector of length 1 or 2 specifying the number of blank lines to
+add before and after the table output. If length 1, used for both before and after.}
 }
 \value{
-Invisibly returns the formatted object.
+Invisibly returns a character vector of the formatted table lines.
+  Also prints the table to the console.
 }
 \description{
-Print a formatted table object in APA style
-}
-\examples{
-tbl <- format_table(head(mtcars))
-style_apa(tbl)
-
+This function formats a `tableR` object as a plain text table following APA style guidelines.
+It respects the column alignment specified in the `tableR` object and produces
+horizontal lines that match the table width. Supports caption display and spacing.
 }

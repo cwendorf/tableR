@@ -2,25 +2,27 @@
 % Please edit documentation in R/styler.R
 \name{style_box}
 \alias{style_box}
-\title{Print a formatted table object as Unicode box}
+\title{Render a TableR Object in Box Drawing Style}
 \usage{
 style_box(formatted, caption = NULL, space = c(1, 1))
 }
 \arguments{
-\item{formatted}{A formatted table or list of formatted tables.}
+\item{formatted}{A `tableR` object (or `tableR_list`) to be styled as a box table.
+This object is typically created by `format_table()` and contains attributes for alignment,
+width, row names, and captions.}
 
-\item{caption}{Caption(s) for the table(s).}
+\item{caption}{Optional character string to include as a caption above the table.
+If `NULL`, uses the `caption` attribute from the `formatted` object, if available.}
 
-\item{space}{Numeric vector of length 2 for spacing before and after output.}
+\item{space}{Integer vector of length 1 or 2 indicating the number of blank lines
+to add before and after the table output. If length 1, that number is used for both.}
 }
 \value{
-Invisibly returns the formatted object.
+Invisibly returns a character vector of the formatted table lines.
+  Also prints the styled table directly to the console.
 }
 \description{
-Print a formatted table object as Unicode box
-}
-\examples{
-tbl <- format_table(head(mtcars))
-style_box(tbl)
-
+Formats a `tableR` object as a text table with box-style borders using ASCII characters.
+This style includes horizontal and vertical lines surrounding the table, column headers,
+and rows, with proper padding and alignment for each column.
 }

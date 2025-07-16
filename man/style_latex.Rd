@@ -2,32 +2,24 @@
 % Please edit documentation in R/styler.R
 \name{style_latex}
 \alias{style_latex}
-\title{Print a formatted table object as LaTeX code}
+\title{Render a TableR Object as a LaTeX Table}
 \usage{
 style_latex(formatted, caption = NULL, space = c(1, 1))
 }
 \arguments{
-\item{formatted}{A formatted table or list of formatted tables.}
+\item{formatted}{A `tableR` object (or `tableR_list`) typically created by `format_table()`.
+Must have attributes for alignment, row names, and optionally a caption.}
 
-\item{caption}{Optional caption(s) for the table(s).}
+\item{caption}{Optional character string to override the caption attribute.}
 
-\item{space}{Numeric vector of length 2 for spacing before and after output.}
+\item{space}{Integer vector of length 1 or 2 specifying the number of blank lines
+to insert before and after the table output. If length 1, uses the same number before and after.}
 }
 \value{
-Invisibly returns the formatted object.
+Invisibly returns a character vector of LaTeX lines forming the table.
+  Also prints the LaTeX table code to the console.
 }
 \description{
-Print a formatted table object as LaTeX code
-}
-\examples{
-tbl <- format_table(head(mtcars))
-style_latex(tbl)
-
-# For a list of formatted tables
-tbl_list <- list(
-  format_table(head(mtcars)),
-  format_table(head(iris))
-)
-style_latex(tbl_list, caption = c("Mtcars Table", "Iris Table"))
-
+Converts a `tableR` object into LaTeX tabular syntax, respecting column alignments
+and optionally including row names and a caption.
 }

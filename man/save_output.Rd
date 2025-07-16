@@ -2,33 +2,18 @@
 % Please edit documentation in R/saver.R
 \name{save_output}
 \alias{save_output}
-\title{Save a Styled Table to a File}
+\title{Save printed output to a file without printing to console}
 \usage{
-save_output(styled, file = "table_output.txt", append = FALSE)
+save_output(expr, file)
 }
 \arguments{
-\item{styled}{A `"formatted"` object or a character vector representing styled table lines.}
+\item{expr}{An expression that prints output (e.g., `style_console(tbl)`).}
 
-\item{file}{Character string specifying the file path where the table will be saved.
-Defaults to `"table_output.txt"`.}
-
-\item{append}{Logical. If `TRUE`, appends the output to the file. If `FALSE`, overwrites the file.}
+\item{file}{Path to the file where output should be saved.}
 }
 \value{
-Invisibly returns the input `styled` object.
+Invisibly returns the file path.
 }
 \description{
-Writes a table to a text file. The table can be either a `"formatted"` object created
-with [format_table()] or a character vector of pre-rendered lines (e.g., from [style_console()],
-[style_markdown()], or [style_apa()]).
-}
-\examples{
-df <- data.frame(a = c(1.1, 2.2), b = c("x", "y"))
-tbl <- format_table(df)
-styled <- style_console(tbl)
-save_output(styled, file = "my_table.txt")
-
-}
-\seealso{
-[format_table()], [style_console()], [style_markdown()], [style_apa()]
+Save printed output to a file without printing to console
 }

@@ -2,25 +2,24 @@
 % Please edit documentation in R/styler.R
 \name{style_markdown}
 \alias{style_markdown}
-\title{Print a formatted table object as Markdown}
+\title{Format a 'tableR' Object as a Markdown Table}
 \usage{
 style_markdown(formatted, caption = NULL, space = c(1, 1))
 }
 \arguments{
-\item{formatted}{A formatted table or list of formatted tables.}
+\item{formatted}{A \code{"tableR"} object (or \code{"tableR_list"}) created by \code{format_table()}.}
 
-\item{caption}{Caption(s) for the table(s).}
+\item{caption}{Optional character string specifying a caption to print above the table.
+Defaults to the \code{"caption"} attribute of the object, if any.}
 
-\item{space}{Numeric vector of length 2 for spacing before and after output.}
+\item{space}{Integer vector of length 1 or 2 specifying the number of blank lines to add
+before and after the table output. If length 1, the value is recycled.}
 }
 \value{
-Invisibly returns the formatted object.
+Invisibly returns a character vector of the markdown table lines.
+        Also prints the markdown table to the console.
 }
 \description{
-Print a formatted table object as Markdown
-}
-\examples{
-tbl <- format_table(head(mtcars))
-style_markdown(tbl)
-
+Converts a formatted table (of class \code{"tableR"}) into a markdown-formatted table string.
+Supports optional captions and spacing around the output.
 }

@@ -39,11 +39,3 @@ table with specified column widths, alignments, padding, digit formatting,
 spacing, and captions. If a list of tables is provided, it recursively
 formats each element.
 }
-\examples{
-format_table(c(1.2345, 2.3456, 3.4567))
-format_table(matrix(1:9, nrow = 3))
-df <- data.frame(A = 1:3, B = c(1.234, 2.345, 3.456))
-format_table(df, width = 6, align = c("left", "right"), digits = 1)
-format_table(list(iris = head(iris), mtcars = mtcars[1:5, ]), caption = c("Iris subset", "Mtcars subset"))
-
-}
