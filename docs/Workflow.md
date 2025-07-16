@@ -1,3 +1,6 @@
+tableR Workflow
+================
+
 ## tableR Workflow
 
 - [Introduction](#introduction)
@@ -64,22 +67,18 @@ width, and alignment.
 format_table(df_simple)
 ```
 
-    ## 
     ##      A    B
     ## 1 1.23 9.88
     ## 2 5.68 3.21
-    ## 
 
 ``` r
 # Apply rounding to one digit
 format_table(df_mixed, digits = 1)
 ```
 
-    ## 
     ##       Score Passed
     ## Alice  98.5   TRUE
     ## Bob    77.8  FALSE
-    ## 
 
 ``` r
 # Different digits per column
@@ -91,11 +90,9 @@ df_digits <- data.frame(
 format_table(df_digits, digits = c(1, 4, 2))
 ```
 
-    ## 
     ##      A         B       C
     ## 1 12.3    0.0001 1000.10
     ## 2  7.9 5000.1000    3.14
-    ## 
 
 ``` r
 # Custom width and alignment
@@ -111,11 +108,9 @@ format_table(df_align,
              align = c("left", "right", "center"))
 ```
 
-    ## 
-    ##      City                Pop   Growth  
-    ## 2023 New York        8419600    0.010  
-    ## 2024 LA              3980400   -0.005  
-    ## 
+    ##          City     Pop Growth
+    ## 2023 New York 8419600  0.010
+    ## 2024       LA 3980400 -0.005
 
 ``` r
 # Truncated labels and centered alignment
@@ -129,11 +124,9 @@ format_table(df_trunc,
              align = c("center", "right"))
 ```
 
-    ## 
-    ##      Label            Value
-    ## 1 SuperLongLab         3.14
-    ## 2    Short             2.72
-    ## 
+    ##            Label Value
+    ## 1 SuperLongLabel  3.14
+    ## 2          Short  2.72
 
 ### Step 3 - Style the Table
 
@@ -161,9 +154,9 @@ df_stats |>
     ## 
     ## Table 1: Summary
     ## 
-    ##            M        SD    N
-    ## Group 1 12.3    0.0001 1000
-    ## Group 2  7.9 5000.1000  315
+    ##                   M          SD          N 
+    ##  Group 1       12.3      0.0001       1000 
+    ##  Group 2        7.9   5000.1000        315 
     ## 
 
 ``` r
@@ -176,10 +169,10 @@ df_stats |>
     ## 
     ## ### Table 1: Summary
     ## 
-    ## |         |    M |        SD |    N |
-    ## | :------ | ---: | --------: | ---: |
-    ## | Group 1 | 12.3 |    0.0001 | 1000 |
-    ## | Group 2 |  7.9 | 5000.1000 |  315 |
+    ## |           |          M |          SD |          N |
+    ## | :-------- | ---------: | ----------: | ---------: |
+    ## | Group 1   |       12.3 |      0.0001 |       1000 |
+    ## | Group 2   |        7.9 |   5000.1000 |        315 |
     ## 
     ## 
 
@@ -196,12 +189,12 @@ df_stats |>
     ## Table 1
     ## Descriptive Statistics
     ## 
-    ## +---------+------+-----------+------+
-    ## |         |  M   |    SD     |  N   |
-    ## +---------+------+-----------+------+
-    ## | Group 1 | 12.3 |    0.0001 | 1000 |
-    ## | Group 2 |  7.9 | 5000.1000 |  315 |
-    ## +---------+------+-----------+------+
+    ## -------------------------------------------
+    ##                   M          SD          N 
+    ## -------------------------------------------
+    ##  Group 1       12.3      0.0001       1000 
+    ##  Group 2        7.9   5000.1000        315 
+    ## -------------------------------------------
     ## 
     ## 
     ## 
@@ -248,11 +241,9 @@ mat_num <- matrix(c(1.2345, 6.789, 0.00123, 456.7), nrow = 2)
 format_table(mat_num, digits = 2)
 ```
 
-    ## 
     ##     V1     V2
     ## 1 1.23   0.00
     ## 2 6.79 456.70
-    ## 
 
 ``` r
 # Character matrix
@@ -260,11 +251,9 @@ mat_char <- matrix(c("apple", "banana", "kiwi", "melon"), nrow = 2)
 format_table(mat_char)
 ```
 
-    ## 
     ##       V1    V2
     ## 1  apple  kiwi
     ## 2 banana melon
-    ## 
 
 ``` r
 # Named vector
@@ -272,11 +261,8 @@ vec_named <- c(a = 1.234, b = 5.678)
 format_table(vec_named, digits = 1)
 ```
 
-    ## 
-    ##     x
-    ## a 1.2
-    ## b 5.7
-    ## 
+    ##     a   b
+    ## 1 1.2 5.7
 
 ``` r
 # Unnamed vector
@@ -284,20 +270,6 @@ vec_unnamed <- c(10.1, 20.2)
 format_table(vec_unnamed)
 ```
 
-    ## 
-    ##       x
-    ## 1 10.10
-    ## 2 20.20
-    ## 
+    ##      V1    V2
+    ## 1 10.10 20.20
 
-``` r
-# Named list with equal-length vectors
-lst_named <- list(A = c(1.23, 4.56), B = c(7.89, 0.12))
-format_table(lst_named, digits = 2)
-```
-
-    ## 
-    ##      A    B
-    ## 1 1.23 7.89
-    ## 2 4.56 0.12
-    ## 

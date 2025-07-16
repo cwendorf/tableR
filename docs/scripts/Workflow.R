@@ -121,6 +121,11 @@ format_table(vec_named, digits = 1)
 vec_unnamed <- c(10.1, 20.2)
 format_table(vec_unnamed)
 
-# Named list with equal-length vectors
-lst_named <- list(A = c(1.23, 4.56), B = c(7.89, 0.12))
-format_table(lst_named, digits = 2)
+# Lists (even with mixed input)
+lst <- list(
+  df = data.frame(a = 1:3, b = c(2.345, 3.456, 4.567)),
+  named_vec = c(foo = 1.23, bar = 4.56),
+  unnamed_vec = c(10, 20, 30),
+  mat = matrix(1:6, ncol = 2)
+)
+format_table(lst, width=8, digits=3)
