@@ -1,133 +1,146 @@
 # tableR
-## Format Output
+## Format Table
 
-#' Format a Data Frame for Aligned Printing (with Padding)
+#' Format a vector, matrix, or data.frame into a formatted table object
 #'
-#' Formats a data frame into a list structure with aligned, width-controlled,
-#' padded, and optionally rounded or significant numeric columns, suitable for custom
-#' table rendering or printing.
+#' This function converts vectors, matrices, or data.frames into a formatted
+#' table with specified column widths, alignments, padding, digit formatting,
+#' spacing, and captions. If a list of tables is provided, it recursively
+#' formats each element.
 #'
-#' @param x A data frame or object coercible to a data frame.
-#' @param digits Integer or numeric vector. Number of decimal places (or significant digits if `signif = TRUE`) to use for numeric columns. If a single value, it is recycled for all columns.
-#' @param signif Logical. If `TRUE`, numbers are formatted using significant digits instead of decimal places.
-#' @param zeros Logical. If `TRUE`, retains trailing zeros in numeric formatting.
-#' @param width NULL, single integer, or integer vector. Column widths to apply before padding. If `NULL`, widths are inferred from content and column names.
-#' @param padding Integer. Extra spaces to pad to each column's width.
-#' @param align Character string or character vector. Text alignment per column: `"left"`, `"center"`, or `"right"`. Recycled to match number of columns if needed.
+#' @param x A vector, matrix, data.frame, or list of such objects to format.
+#' @param width Numeric scalar or vector specifying minimal width of columns.
+#' @param align Character scalar or vector specifying alignment for columns:
+#'   "left", "right", or "center".
+#' @param padding Numeric scalar specifying padding spaces (currently stored as attribute).
+#' @param digits Integer specifying number of decimal digits for numeric formatting.
+#' @param space Numeric vector of length 2 specifying empty lines before and after output.
+#' @param caption Character vector or NULL specifying captions for tables.
 #'
-#' @return An object of class `"formatted"`: a list with elements `header`, `rows`, `row_names`, `align`, and `width`. This object is suitable for custom printing or table formatting.
-#'
-#' @examples
-#' df <- data.frame(a = c(1.234, 5.678), b = c("foo", "bar"))
-#' format_table(df, digits = 2, padding = 2)
-#'
+#' @return A formatted table object (class "tableR") or list of such objects.
 #' @export
+#' @examples
+#' format_table(c(1.2345, 2.3456, 3.4567))
+#' format_table(matrix(1:9, nrow = 3))
+#' df <- data.frame(A = 1:3, B = c(1.234, 2.345, 3.456))
+#' format_table(df, width = 6, align = c("left", "right"), digits = 1)
+#' format_table(list(iris = head(iris), mtcars = mtcars[1:5, ]), caption = c("Iris subset", "Mtcars subset"))
 #' 
-format_table <- function(x, 
-                         digits = 2, 
-                         signif = FALSE, 
-                         zeros = TRUE,
-                         width = NULL,
-                         padding = 1,
-                         align = "right") {
+#' @export
+format_table <- function(x, width = 8, align = "right", padding = 1,
+                         digits = 2, space = c(1, 1), caption = NULL) {
   
-  # Strip classes and convert to data.frame
-  if (!is.data.frame(x)) {
-    x <- as.data.frame(unclass(x))
+  vec_to_df <- function(vec) {
+    if (is.null(names(vec))) {
+      names(vec) <- paste0("V", seq_along(vec))
+    }
+    df <- as.data.frame(as.list(vec), stringsAsFactors = FALSE)
+    rownames(df) <- NULL
+    df
   }
   
-  n_cols <- ncol(x)
-
-  digits_vec <- if (length(digits) == 1) rep(digits, n_cols) else digits
-  if (length(digits_vec) != n_cols) stop("Length of 'digits' must be 1 or ncol(x)")
-
-  x[] <- mapply(function(col, d) {
-    if (is.numeric(col)) {
-      val <- if (signif) signif(col, digits = d) else round(col, digits = d)
-      if (zeros) format(val, nsmall = d, trim = FALSE) else as.character(val)
-    } else as.character(col)
-  }, x, digits_vec, SIMPLIFY = FALSE)
-
-  if (is.null(width)) {
-    width <- sapply(x, function(col) max(nchar(col), na.rm = TRUE))
-    width <- pmax(width, nchar(colnames(x)))
-  } else if (length(width) == 1) {
-    width <- rep(width, n_cols)
+  mat_to_df <- function(mat) {
+    df <- as.data.frame(mat, stringsAsFactors = FALSE)
+    rownames(df) <- rownames(mat)
+    df
   }
   
-  width <- width + (padding * 2)
-
-  if (length(align) == 1) align <- rep(align, n_cols)
-  if (length(align) != n_cols) stop("Length of 'align' must match ncol(x)")
-
-  structure(
-    list(
-      header = colnames(x),
-      rows = split(x, seq(nrow(x))),
-      row_names = rownames(x),
-      align = align,
-      width = width
-    ),
-    class = "formatted"
-  )
+  to_table <- function(obj) {
+    if (is.atomic(obj) && is.null(dim(obj))) {
+      obj <- vec_to_df(obj)
+    } else if (is.matrix(obj)) {
+      obj <- mat_to_df(obj)
+    } else if (!is.data.frame(obj)) {
+      stop("Input must be a vector, matrix, or data.frame.")
+    }
+    
+    rn <- rownames(obj)
+    if (!is.null(rn)) {
+      rn <- as.character(rn)
+    }
+    
+    obj[] <- lapply(obj, function(col) {
+      if (is.numeric(col)) {
+        sprintf(paste0("%.", digits, "f"), col)
+      } else {
+        as.character(col)
+      }
+    })
+    
+    col_names <- names(obj)
+    col_widths <- vapply(seq_along(obj), function(i) {
+      max(nchar(c(col_names[i], obj[[i]])), na.rm = TRUE)
+    }, integer(1))
+    
+    if (length(width) == 1) {
+      width <- rep(width, length(col_widths))
+    } else if (length(width) != length(col_widths)) {
+      stop("Length of width must be 1 or equal to number of columns.")
+    }
+    col_widths <- pmax(col_widths, width)
+    
+    if (length(align) == 1) {
+      align <- rep(align, length(col_widths))
+    } else if (length(align) != length(col_widths)) {
+      stop("Length of align must be 1 or equal to number of columns.")
+    }
+    
+    structure(obj,
+              class = c("tableR", "data.frame"),
+              width = col_widths,
+              align = align,
+              padding = padding,
+              space = space,
+              caption = caption,
+              row_names = rn)
+  }
+  
+  if (is.list(x) && !inherits(x, "data.frame")) {
+    nms <- names(x)
+    out <- lapply(seq_along(x), function(i) {
+      tbl <- to_table(x[[i]])
+      if (!is.null(caption)) {
+        if (length(caption) == length(x)) {
+          attr(tbl, "caption") <- caption[[i]]
+        } else {
+          attr(tbl, "caption") <- caption[[1]]
+        }
+      } else if (is.null(attr(tbl, "caption"))) {
+        if (!is.null(nms) && nms[i] != "") {
+          attr(tbl, "caption") <- nms[i]
+        } else {
+          attr(tbl, "caption") <- paste0("Table ", i)
+        }
+      }
+      tbl
+    })
+    class(out) <- "tableR_list"
+    attr(out, "space") <- space
+    return(out)
+  }
+  
+  to_table(x)
 }
 
 
-#' Print a Formatted Table
+#' Print a formatted table object to console
 #'
-#' S3 method for printing objects of class `"formatted"` as aligned tables in the console.
-#' Includes optional row names, caption, and vertical spacing.
-#'
-#' @param x An object of class `"formatted"` as returned by [format_table()].
-#' @param caption Optional character string. A caption to print above the table.
-#' @param space Integer vector of length 2. Number of blank lines to print before and after the table, respectively. Defaults to `c(1, 1)`.
-#' @param ... Additional arguments (currently unused).
-#'
-#' @return Invisibly returns the input object `x`. Used for its side effect of printing to the console.
-#'
-#' @seealso [format_table()]
-#'
-#' @method print formatted
+#' @param x A formatted table object created by \code{format_table}.
+#' @param ... Additional arguments (currently ignored).
 #' @export
-print.formatted <- function(x, caption = NULL, space = c(1, 1), ...) {
-  tbl <- x
-  header <- tbl$header
-  rows <- tbl$rows
-  row_names <- tbl$row_names
-  align <- tbl$align
-  width <- tbl$width
+#' @examples
+#' tbl <- format_table(mtcars[1:3, 1:3])
+#' print(tbl)
+print.tableR <- function(x, ...) {
+  style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
+  invisible(x)
+}
 
-  if (!is.null(row_names)) {
-    header <- c("", header)
-    align <- c("left", align)
-    name_width <- max(nchar(row_names), nchar(""))
-    width <- c(name_width, width)
-  }
-
-  pad_cell <- function(cell, width, align) {
-    pad <- width - nchar(cell)
-    if (pad < 0) return(substr(cell, 1, width))
-    switch(align,
-           left = paste0(cell, strrep(" ", pad)),
-           right = paste0(strrep(" ", pad), cell),
-           center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
-           cell)
-  }
-
-  header_line <- paste(mapply(pad_cell, header, width, align), collapse = " ")
-  data_lines <- vapply(seq_along(rows), function(i) {
-    row <- unname(unlist(rows[[i]]))
-    if (!is.null(row_names)) row <- c(row_names[i], row)
-    paste(mapply(pad_cell, row, width, align), collapse = " ")
-  }, character(1))
-
-  output <- c()
-  output <- c(output, rep("", space[1]))
-  if (!is.null(caption)) {
-    output <- c(output, caption, "")
-  }
-  output <- c(output, header_line, data_lines, rep("", space[2]))
-
-  cat(paste(output, collapse = "\n"), "\n")
-  invisible(tbl)
+#' Print a list of formatted table objects to console
+#'
+#' @param x A list of formatted table objects created by \code{format_table}.
+#' @param ... Additional arguments (currently ignored).
+print.tableR_list <- function(x, ...) {
+  style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
+  invisible(x)
 }

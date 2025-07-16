@@ -26,8 +26,8 @@
 save_output <- function(styled, file = "table_output.txt", append = FALSE) {
   output_lines <- NULL
 
-  if (inherits(styled, "formatted")) {
-    # Capture printed output without displaying
+  # If input is a tableR or tableR_list object, capture the printed output
+  if (inherits(styled, "tableR") || inherits(styled, "tableR_list")) {
     con <- textConnection("tmp_output", "w", local = TRUE)
     sink(con)
     print(styled)
@@ -37,10 +37,9 @@ save_output <- function(styled, file = "table_output.txt", append = FALSE) {
   } else if (is.character(styled)) {
     output_lines <- styled
   } else {
-    stop("Input must be a 'formatted' object or a character vector.")
+    stop("Input must be a 'tableR' object, 'tableR_list', or a character vector.")
   }
 
-  # Open file connection in write or append mode
   con <- file(file, open = if (append) "a" else "w", encoding = "UTF-8")
   writeLines(output_lines, con = con, useBytes = TRUE)
   close(con)

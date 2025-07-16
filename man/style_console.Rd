@@ -2,31 +2,25 @@
 % Please edit documentation in R/styler.R
 \name{style_console}
 \alias{style_console}
-\title{Render a Formatted Table to the Console with Styling}
+\title{Print a formatted table object in console style}
 \usage{
 style_console(formatted, caption = NULL, space = c(1, 1))
 }
 \arguments{
-\item{formatted}{An object of class `"formatted"` as returned by [format_table()].}
+\item{formatted}{A formatted table or list of formatted tables.}
 
-\item{caption}{Optional character string. A caption to display above the table.}
+\item{caption}{Caption(s) for the table(s).}
 
-\item{space}{Integer of length 1 or 2. Number of blank lines before and after the table.
-If a single value is provided, it is applied to both top and bottom.}
+\item{space}{Numeric vector of length 2 for spacing before and after output.}
 }
 \value{
-Invisibly returns the input `formatted` object. Used primarily for its side effect of printing to the console.
+Invisibly returns the formatted object.
 }
 \description{
-Prints a table object created by [format_table()] to the console with aligned columns,
-optional caption, and customizable vertical spacing. Useful for clean, readable console output.
+Print a formatted table object in console style
 }
 \examples{
-df <- data.frame(a = c(1.2, 3.4), b = c("x", "y"))
-styled <- format_table(df)
-style_console(styled, caption = "My Table")
+tbl <- format_table(head(mtcars))
+style_console(tbl)
 
-}
-\seealso{
-[format_table()], [print.formatted()]
 }

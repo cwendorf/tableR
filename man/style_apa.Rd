@@ -2,32 +2,25 @@
 % Please edit documentation in R/styler.R
 \name{style_apa}
 \alias{style_apa}
-\title{Render a Formatted Table in APA Style}
+\title{Print a formatted table object in APA style}
 \usage{
 style_apa(formatted, caption = NULL, space = c(1, 1))
 }
 \arguments{
-\item{formatted}{An object of class `"formatted"` as returned by [format_table()].}
+\item{formatted}{A formatted table or list of formatted tables.}
 
-\item{caption}{Optional character string. A caption to print above the table.}
+\item{caption}{Caption(s) for the table(s).}
 
-\item{space}{Integer of length 1 or 2. Number of blank lines to include before and after the table.
-If a single value is provided, it is applied to both top and bottom spacing.}
+\item{space}{Numeric vector of length 2 for spacing before and after output.}
 }
 \value{
-Invisibly returns a character vector containing the formatted APA-style table.
+Invisibly returns the formatted object.
 }
 \description{
-Prints a `"formatted"` table using APA-style layout, including borders and centered headers.
-Optionally adds a caption and customizable vertical spacing. Useful for formatting tables
-for APA-style manuscripts or console display in APA format.
+Print a formatted table object in APA style
 }
 \examples{
-df <- data.frame(a = c(1.23, 4.56), b = c("apple", "banana"))
-tbl <- format_table(df)
-style_apa(tbl, caption = "Table 1\nFruit Preferences")
+tbl <- format_table(head(mtcars))
+style_apa(tbl)
 
-}
-\seealso{
-[format_table()], [style_console()], [style_markdown()]
 }

@@ -2,43 +2,48 @@
 % Please edit documentation in R/formatter.R
 \name{format_table}
 \alias{format_table}
-\title{Format a Data Frame for Aligned Printing (with Padding)}
+\title{Format a vector, matrix, or data.frame into a formatted table object}
 \usage{
 format_table(
   x,
-  digits = 2,
-  signif = FALSE,
-  zeros = TRUE,
-  width = NULL,
+  width = 8,
+  align = "right",
   padding = 1,
-  align = "right"
+  digits = 2,
+  space = c(1, 1),
+  caption = NULL
 )
 }
 \arguments{
-\item{x}{A data frame or object coercible to a data frame.}
+\item{x}{A vector, matrix, data.frame, or list of such objects to format.}
 
-\item{digits}{Integer or numeric vector. Number of decimal places (or significant digits if `signif = TRUE`) to use for numeric columns. If a single value, it is recycled for all columns.}
+\item{width}{Numeric scalar or vector specifying minimal width of columns.}
 
-\item{signif}{Logical. If `TRUE`, numbers are formatted using significant digits instead of decimal places.}
+\item{align}{Character scalar or vector specifying alignment for columns:
+"left", "right", or "center".}
 
-\item{zeros}{Logical. If `TRUE`, retains trailing zeros in numeric formatting.}
+\item{padding}{Numeric scalar specifying padding spaces (currently stored as attribute).}
 
-\item{width}{NULL, single integer, or integer vector. Column widths to apply before padding. If `NULL`, widths are inferred from content and column names.}
+\item{digits}{Integer specifying number of decimal digits for numeric formatting.}
 
-\item{padding}{Integer. Extra spaces to pad to each column's width.}
+\item{space}{Numeric vector of length 2 specifying empty lines before and after output.}
 
-\item{align}{Character string or character vector. Text alignment per column: `"left"`, `"center"`, or `"right"`. Recycled to match number of columns if needed.}
+\item{caption}{Character vector or NULL specifying captions for tables.}
 }
 \value{
-An object of class `"formatted"`: a list with elements `header`, `rows`, `row_names`, `align`, and `width`. This object is suitable for custom printing or table formatting.
+A formatted table object (class "tableR") or list of such objects.
 }
 \description{
-Formats a data frame into a list structure with aligned, width-controlled,
-padded, and optionally rounded or significant numeric columns, suitable for custom
-table rendering or printing.
+This function converts vectors, matrices, or data.frames into a formatted
+table with specified column widths, alignments, padding, digit formatting,
+spacing, and captions. If a list of tables is provided, it recursively
+formats each element.
 }
 \examples{
-df <- data.frame(a = c(1.234, 5.678), b = c("foo", "bar"))
-format_table(df, digits = 2, padding = 2)
+format_table(c(1.2345, 2.3456, 3.4567))
+format_table(matrix(1:9, nrow = 3))
+df <- data.frame(A = 1:3, B = c(1.234, 2.345, 3.456))
+format_table(df, width = 6, align = c("left", "right"), digits = 1)
+format_table(list(iris = head(iris), mtcars = mtcars[1:5, ]), caption = c("Iris subset", "Mtcars subset"))
 
 }
