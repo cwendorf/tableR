@@ -18,14 +18,7 @@
 #' @param caption Character vector or NULL specifying captions for tables.
 #'
 #' @return A formatted table object (class "tableR") or list of such objects.
-#' @export
-#' @examples
-#' format_table(c(1.2345, 2.3456, 3.4567))
-#' format_table(matrix(1:9, nrow = 3))
-#' df <- data.frame(A = 1:3, B = c(1.234, 2.345, 3.456))
-#' format_table(df, width = 6, align = c("left", "right"), digits = 1)
-#' format_table(list(iris = head(iris), mtcars = mtcars[1:5, ]), caption = c("Iris subset", "Mtcars subset"))
-#' 
+#'
 #' @export
 format_table <- function(x, width = 8, align = "right", padding = 1,
                          digits = 2, space = c(1, 1), caption = NULL) {
@@ -59,31 +52,40 @@ format_table <- function(x, width = 8, align = "right", padding = 1,
       rn <- as.character(rn)
     }
     
-    obj[] <- lapply(obj, function(col) {
+    col_names <- names(obj)
+    
+    # Recycle or check widths, aligns, digits
+    n_cols <- length(col_names)
+    if (length(width) == 1) {
+      width <- rep(width, n_cols)
+    } else if (length(width) != n_cols) {
+      stop("Length of width must be 1 or equal to number of columns.")
+    }
+    if (length(align) == 1) {
+      align <- rep(align, n_cols)
+    } else if (length(align) != n_cols) {
+      stop("Length of align must be 1 or equal to number of columns.")
+    }
+    if (length(digits) == 1) {
+      digits <- rep(digits, n_cols)
+    } else if (length(digits) != n_cols) {
+      stop("Length of digits must be 1 or equal to number of columns.")
+    }
+    
+    obj[] <- lapply(seq_along(obj), function(i) {
+      col <- obj[[i]]
       if (is.numeric(col)) {
-        sprintf(paste0("%.", digits, "f"), col)
+        sprintf(paste0("%.", digits[i], "f"), col)
       } else {
         as.character(col)
       }
     })
+    names(obj) <- col_names
     
-    col_names <- names(obj)
     col_widths <- vapply(seq_along(obj), function(i) {
       max(nchar(c(col_names[i], obj[[i]])), na.rm = TRUE)
     }, integer(1))
-    
-    if (length(width) == 1) {
-      width <- rep(width, length(col_widths))
-    } else if (length(width) != length(col_widths)) {
-      stop("Length of width must be 1 or equal to number of columns.")
-    }
     col_widths <- pmax(col_widths, width)
-    
-    if (length(align) == 1) {
-      align <- rep(align, length(col_widths))
-    } else if (length(align) != length(col_widths)) {
-      stop("Length of align must be 1 or equal to number of columns.")
-    }
     
     structure(obj,
               class = c("tableR", "data.frame"),
@@ -122,15 +124,10 @@ format_table <- function(x, width = 8, align = "right", padding = 1,
   to_table(x)
 }
 
-
 #' Print a formatted table object to console
 #'
 #' @param x A formatted table object created by \code{format_table}.
 #' @param ... Additional arguments (currently ignored).
-#' @export
-#' @examples
-#' tbl <- format_table(mtcars[1:3, 1:3])
-#' print(tbl)
 print.tableR <- function(x, ...) {
   style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
   invisible(x)

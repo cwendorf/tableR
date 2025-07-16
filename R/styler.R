@@ -10,451 +10,487 @@
 #' @return Value of `a` if not NULL, else `b`.
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-#' Print a formatted table object in console style
+#' Render a Formatted Table to the Console with Styling
 #'
-#' @param formatted A formatted table or list of formatted tables.
-#' @param caption Caption(s) for the table(s).
-#' @param space Numeric vector of length 2 for spacing before and after output.
-#' @return Invisibly returns the formatted object.
-#' @examples
-#' tbl <- format_table(head(mtcars))
-#' style_console(tbl)
-#' 
+#' Prints a table object created by [format_table()] to the console with aligned columns,
+#' optional caption, and customizable vertical spacing. Useful for clean, readable console output.
+#'
+#' @param formatted An object of class `"tableR"` or `"tableR_list"` as returned by [format_table()].
+#' @param caption Optional character string to override the object's caption.
+#' @param space Integer of length 1 or 2. Blank lines before and after the table.
+#'
+#' @return Invisibly returns the input `formatted` object.
+#'
 #' @export
 style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    n <- length(formatted)
-    captions <- if (!is.null(caption)) rep_len(caption, n) else
-      vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    for (i in seq_len(n)) {
-      style_console(formatted[[i]], caption = captions[[i]], space = space)
-    }
+    lapply(formatted, function(tbl) {
+      style_console(tbl, caption = attr(tbl, "caption"), space = attr(formatted, "space"))
+    })
     return(invisible(formatted))
   }
   
-  if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
-  if (length(space) == 1) space <- rep(space, 2)
+  if (!inherits(formatted, "tableR")) {
+    stop("Input must be a 'tableR' object from format_table().")
+  }
   
-  header <- names(formatted)
-  rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
-  row_names <- attr(formatted, "row_names")
+  if (length(space) == 1) {
+    space <- rep(space, 2)
+  }
+  
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
+  padding <- attr(formatted, "padding")
+  row_names <- attr(formatted, "row_names")
+  caption <- if (is.null(caption)) attr(formatted, "caption") else caption
   
+  col_names <- names(formatted)
+  data_rows <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  
+  # Prepend row names if present
   if (!is.null(row_names)) {
-    header <- c("", header)
+    col_names <- c("", col_names)
     align <- c("left", align)
-    name_width <- max(1, max(nchar(row_names), na.rm = TRUE))
-    width <- c(name_width, width)
+    width <- c(max(nchar(row_names)), width)
+    data_rows <- cbind(row_names, data_rows, stringsAsFactors = FALSE)
   }
   
   pad_cell <- function(cell, width, align) {
     cell <- as.character(cell)
     pad <- width - nchar(cell)
-    pad <- max(0, pad)
+    if (pad < 0) {
+      return(substr(cell, 1, width))
+    }
     switch(align,
-           left = paste0(cell, strrep(" ", pad)),
-           right = paste0(strrep(" ", pad), cell),
-           center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
-           cell)
+           left   = paste0(cell, strrep(" ", pad)),
+           right  = paste0(strrep(" ", pad), cell),
+           center = {
+             left_pad <- floor(pad / 2)
+             right_pad <- ceiling(pad / 2)
+             paste0(strrep(" ", left_pad), cell, strrep(" ", right_pad))
+           },
+           stop("Invalid alignment")
+    )
   }
   
-  header_line <- paste(mapply(pad_cell, header, width, align), collapse = "   ")
+  header_line <- paste(mapply(pad_cell, col_names, width, align), collapse = strrep(" ", padding))
   
-  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
-    row <- as.character(rows_df[i, ])
-    if (!is.null(row_names)) row <- c(row_names[i], row)
-    paste(mapply(pad_cell, row, width, align), collapse = "   ")
-  }, character(1))
+  row_lines <- apply(data_rows, 1, function(row) {
+    paste(mapply(pad_cell, row, width, align), collapse = strrep(" ", padding))
+  })
   
   output <- c()
   output <- c(output, rep("", space[1]))
-  caption <- caption %||% attr(formatted, "caption")
-  if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
-  output <- c(output,
-              header_line,
-              row_lines,
-              rep("", space[2]))
+  if (!is.null(caption)) {
+    output <- c(output, caption, "")
+  }
+  output <- c(output, header_line, row_lines, rep("", space[2]))
   
   cat(paste(output, collapse = "\n"), "\n")
+  
   invisible(formatted)
 }
 
-#' Print a formatted table object as Markdown
+#' Format a 'tableR' Object as a Markdown Table
 #'
-#' @param formatted A formatted table or list of formatted tables.
-#' @param caption Caption(s) for the table(s).
-#' @param space Numeric vector of length 2 for spacing before and after output.
-#' @return Invisibly returns the formatted object.
-#' @examples
-#' tbl <- format_table(head(mtcars))
-#' style_markdown(tbl)
-#' 
+#' Converts a formatted table (of class \code{"tableR"}) into a markdown-formatted table string.
+#' Supports optional captions and spacing around the output.
+#'
+#' @param formatted A \code{"tableR"} object (or \code{"tableR_list"}) created by \code{format_table()}.
+#' @param caption Optional character string specifying a caption to print above the table.
+#'                Defaults to the \code{"caption"} attribute of the object, if any.
+#' @param space Integer vector of length 1 or 2 specifying the number of blank lines to add
+#'              before and after the table output. If length 1, the value is recycled.
+#'
+#' @return Invisibly returns a character vector of the markdown table lines.
+#'         Also prints the markdown table to the console.
+#'
 #' @export
 style_markdown <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    n <- length(formatted)
-    captions <- if (!is.null(caption)) rep_len(caption, n) else
-      vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    invisible(lapply(seq_len(n), function(i) {
-      style_markdown(formatted[[i]], caption = captions[[i]], space = space)
-    }))
+    lapply(formatted, function(tbl) {
+      style_markdown(tbl, caption = attr(tbl, "caption"), space = attr(formatted, "space"))
+    })
     return(invisible(formatted))
   }
   
-  if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
+  if (!inherits(formatted, "tableR")) {
+    stop("Input must be a 'tableR' object from format_table().")
+  }
+  
   if (length(space) == 1) space <- rep(space, 2)
   
-  header <- names(formatted)
-  rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
-  row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
+  row_names <- attr(formatted, "row_names")
+  caption <- if (is.null(caption)) attr(formatted, "caption") else caption
   
+  col_names <- names(formatted)
+  data_rows <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  
+  # Handle row names if present
   if (!is.null(row_names)) {
-    header <- c("", header)
+    row_names <- ifelse(is.na(row_names), "", row_names)
+    max_width <- max(nchar(row_names), na.rm = TRUE)
+    if (!is.finite(max_width) || max_width < 1) max_width <- 1L
+    width <- c(max_width, width)
     align <- c("left", align)
-    name_width <- max(1, max(nchar(row_names), na.rm = TRUE))
-    width <- c(name_width, width)
+    col_names <- c("", col_names)
+    data_rows <- cbind(row_names, data_rows, stringsAsFactors = FALSE)
   }
+  
+  # Ensure width vector matches number of columns
+  n_cols <- length(col_names)
+  if (length(width) < n_cols) {
+    width <- c(width, rep(1L, n_cols - length(width)))
+  } else if (length(width) > n_cols) {
+    width <- width[seq_len(n_cols)]
+  }
+  
+  # Force minimum width of 1 for all columns
+  width <- pmax(width, 1L)
   
   pad_cell <- function(cell, width, align) {
     cell <- as.character(cell)
+    cell[is.na(cell)] <- ""
     pad <- width - nchar(cell)
-    pad <- max(0, pad)
+    pad <- pmax(pad, 0)
     switch(align,
-           left = paste0(cell, strrep(" ", pad)),
-           right = paste0(strrep(" ", pad), cell),
+           left   = paste0(cell, strrep(" ", pad)),
+           right  = paste0(strrep(" ", pad), cell),
            center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
            cell)
   }
   
   align_marker <- function(a, w) {
-    w <- max(1, w)
+    # Defensive: if width < 1, set to 1 to avoid strrep error
+    if (w < 1) w <- 1
     if (a == "left")   return(paste0(":", strrep("-", w - 1)))
     if (a == "right")  return(paste0(strrep("-", w - 1), ":"))
-    if (a == "center") return(paste0(":", strrep("-", w - 2), ":"))
+    if (a == "center") return(paste0(":", strrep("-", max(w - 2, 0)), ":"))
     strrep("-", w)
   }
   
-  header_line <- paste0("| ", paste(mapply(pad_cell, header, width, align), collapse = " | "), " |")
+  header_line <- paste0("| ", paste(mapply(pad_cell, col_names, width, align), collapse = " | "), " |")
   align_line  <- paste0("| ", paste(mapply(align_marker, align, width), collapse = " | "), " |")
   
-  data_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
-    row <- as.character(rows_df[i, ])
-    if (!is.null(row_names)) row <- c(row_names[i], row)
+  data_lines <- apply(data_rows, 1, function(row) {
+    row <- ifelse(is.na(row), "", row)
     paste0("| ", paste(mapply(pad_cell, row, width, align), collapse = " | "), " |")
-  }, character(1))
+  })
   
   md <- c()
   md <- c(md, rep("", space[1]))
-  caption <- caption %||% attr(formatted, "caption")
   if (!is.null(caption) && nzchar(caption)) {
     md <- c(md, caption, "")
   }
   md <- c(md, header_line, align_line, data_lines, rep("", space[2]))
   
   cat(paste(md, collapse = "\n"), "\n")
-  invisible(formatted)
+  invisible(md)
 }
 
-#' Print a formatted table object in APA style
+#' Style a 'tableR' Object as an APA-Style Table
 #'
-#' @param formatted A formatted table or list of formatted tables.
-#' @param caption Caption(s) for the table(s).
-#' @param space Numeric vector of length 2 for spacing before and after output.
-#' @return Invisibly returns the formatted object.
-#' @examples
-#' tbl <- format_table(head(mtcars))
-#' style_apa(tbl)
-#' 
+#' This function formats a `tableR` object as a plain text table following APA style guidelines.
+#' It respects the column alignment specified in the `tableR` object and produces
+#' horizontal lines that match the table width. Supports caption display and spacing.
+#'
+#' @param formatted A `tableR` object or `tableR_list` containing one or more tables to format.
+#'   Must inherit from class `"tableR"`.
+#' @param caption Optional character string to override the table caption. If `NULL`,
+#'   the caption attribute from the `formatted` object is used if available.
+#' @param space Numeric vector of length 1 or 2 specifying the number of blank lines to
+#'   add before and after the table output. If length 1, used for both before and after.
+#'
+#' @return Invisibly returns a character vector of the formatted table lines.
+#'   Also prints the table to the console.
+#'
 #' @export
 style_apa <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
     n <- length(formatted)
     captions <- if (!is.null(caption)) rep_len(caption, n) else
       vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    invisible(lapply(seq_len(n), function(i) {
-      style_apa(formatted[[i]], caption = captions[[i]], space = space)
-    }))
-    return(invisible(formatted))
+    outs <- vector("list", n)
+    for (i in seq_len(n)) {
+      outs[[i]] <- style_apa(formatted[[i]], caption = captions[[i]], space = space)
+    }
+    return(invisible(outs))
   }
-  
+
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
-  
-  header <- names(formatted)
-  rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
-  row_names <- attr(formatted, "row_names")
+
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
-  
+  row_names <- attr(formatted, "row_names")
+  caption <- if (is.null(caption)) attr(formatted, "caption") else caption
+
+  col_names <- names(formatted)
+  data_rows <- as.data.frame(formatted, stringsAsFactors = FALSE)
+
+  # Handle row names
   if (!is.null(row_names)) {
-    header <- c("", header)
+    row_names <- ifelse(is.na(row_names), "", row_names)
+    max_width <- max(nchar(row_names), na.rm = TRUE)
+    if (!is.finite(max_width) || max_width < 1) max_width <- 1L
+    width <- c(max_width, width)
     align <- c("left", align)
-    name_width <- max(1, max(nchar(row_names), na.rm = TRUE))
-    width <- c(name_width, width)
+    col_names <- c("", col_names)
+    data_rows <- cbind(row_names, data_rows, stringsAsFactors = FALSE)
   }
-  
+
+  # Make sure width matches column count
+  n_cols <- length(col_names)
+  if (length(width) < n_cols) {
+    width <- c(width, rep(1L, n_cols - length(width)))
+  } else if (length(width) > n_cols) {
+    width <- width[seq_len(n_cols)]
+  }
+  width <- pmax(width, 1L)  # Ensure minimum width 1
+
   pad_cell <- function(cell, width, align) {
     cell <- as.character(cell)
+    cell[is.na(cell)] <- ""
     pad <- width - nchar(cell)
-    pad <- max(0, pad)
+    pad <- pmax(pad, 0)
     switch(align,
-           left = paste0(cell, strrep(" ", pad)),
-           right = paste0(strrep(" ", pad), cell),
-           center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
-           stop("Invalid alignment"))
+      left   = paste0(cell, strrep(" ", pad)),
+      right  = paste0(strrep(" ", pad), cell),
+      center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
+      cell
+    )
   }
-  
-  total_width <- sum(width) + 3 * (length(width) - 1)
-  sep_line <- strrep("-", total_width)
-  
-  header_line <- paste(mapply(pad_cell, header, width, align), collapse = "   ")
-  
-  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
-    row <- as.character(rows_df[i, ])
-    if (!is.null(row_names)) row <- c(row_names[i], row)
-    paste(mapply(pad_cell, row, width, align), collapse = "   ")
-  }, character(1))
-  
-  output <- c()
-  output <- c(output, rep("", space[1]))
-  caption <- caption %||% attr(formatted, "caption")
-  if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
-  output <- c(output, sep_line, header_line, sep_line, row_lines, sep_line, rep("", space[2]))
-  
-  cat(paste(output, collapse = "\n"), "\n")
-  invisible(formatted)
+
+  # Compose horizontal lines to exactly match table width including column separators
+  total_width <- sum(width) + 3 * length(width) + 1 # width + 3 spaces per col + 1 for starting '+'
+  horiz_line <- paste0("+", paste0(vapply(width, function(w) strrep("-", w + 2), character(1)), collapse = "+"), "+")
+
+  header_line <- paste0("|", paste(mapply(function(name, w, a) {
+    paste0(" ", pad_cell(name, w, a), " ")
+  }, col_names, width, align), collapse = "|"), "|")
+
+  data_lines <- apply(data_rows, 1, function(row) {
+    paste0("|", paste(mapply(function(cell, w, a) {
+      paste0(" ", pad_cell(cell, w, a), " ")
+    }, row, width, align), collapse = "|"), "|")
+  })
+
+  md <- c()
+  md <- c(md, rep("", space[1]))
+  if (!is.null(caption) && nzchar(caption)) {
+    md <- c(md, caption, "")
+  }
+  md <- c(md, horiz_line, header_line, horiz_line, data_lines, horiz_line, rep("", space[2]))
+
+  cat(paste(md, collapse = "\n"), "\n")
+  invisible(md)
 }
 
-
-
-#' Print a formatted table object as Unicode box
+#' Render a TableR Object in Box Drawing Style
 #'
-#' @param formatted A formatted table or list of formatted tables.
-#' @param caption Caption(s) for the table(s).
-#' @param space Numeric vector of length 2 for spacing before and after output.
-#' @return Invisibly returns the formatted object.
-#' @examples
-#' tbl <- format_table(head(mtcars))
-#' style_box(tbl)
-#' 
+#' Formats a `tableR` object as a text table with box-style borders using ASCII characters.
+#' This style includes horizontal and vertical lines surrounding the table, column headers,
+#' and rows, with proper padding and alignment for each column.
+#'
+#' @param formatted A `tableR` object (or `tableR_list`) to be styled as a box table.
+#'   This object is typically created by `format_table()` and contains attributes for alignment,
+#'   width, row names, and captions.
+#' @param caption Optional character string to include as a caption above the table.
+#'   If `NULL`, uses the `caption` attribute from the `formatted` object, if available.
+#' @param space Integer vector of length 1 or 2 indicating the number of blank lines
+#'   to add before and after the table output. If length 1, that number is used for both.
+#'
+#' @return Invisibly returns a character vector of the formatted table lines.
+#'   Also prints the styled table directly to the console.
+#'
 #' @export
 style_box <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
     n <- length(formatted)
     captions <- if (!is.null(caption)) rep_len(caption, n) else
       vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    invisible(lapply(seq_len(n), function(i) {
-      style_box(formatted[[i]], caption = captions[[i]], space = space)
-    }))
-    return(invisible(formatted))
+    outs <- vector("list", n)
+    for (i in seq_len(n)) {
+      outs[[i]] <- style_box(formatted[[i]], caption = captions[[i]], space = space)
+    }
+    return(invisible(outs))
   }
 
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
 
-  padding <- attr(formatted, "padding") %||% 1  # padding spaces left and right
   header <- names(formatted)
   rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
   row_names <- attr(formatted, "row_names")
-  width <- attr(formatted, "width")
   align <- attr(formatted, "align")
+  width <- attr(formatted, "width")
 
+  # Handle row names
   if (!is.null(row_names)) {
-    header <- c("", header)
+    row_names <- ifelse(is.na(row_names), "", row_names)
+    max_width <- max(nchar(row_names), na.rm = TRUE)
+    if (!is.finite(max_width) || max_width < 1) max_width <- 1L
+    width <- c(max_width, width)
     align <- c("left", align)
-    name_width <- max(1, max(nchar(row_names), na.rm = TRUE))
-    width <- c(name_width, width)
+    header <- c("", header)
+    rows_df <- cbind(row_names, rows_df, stringsAsFactors = FALSE)
   }
 
-  pad_width <- width + 2 * padding
+  # Make sure width matches columns count
+  n_cols <- length(header)
+  if (length(width) < n_cols) {
+    width <- c(width, rep(1L, n_cols - length(width)))
+  } else if (length(width) > n_cols) {
+    width <- width[seq_len(n_cols)]
+  }
+  width <- pmax(width, 1L)  # ensure minimum width 1
+
   pad_cell <- function(cell, width, align) {
     cell <- as.character(cell)
+    cell[is.na(cell)] <- ""
     pad <- width - nchar(cell)
-    pad <- max(0, pad)
-    text <- switch(align,
-                   left = paste0(cell, strrep(" ", pad)),
-                   right = paste0(strrep(" ", pad), cell),
-                   center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
-                   cell)
-    paste0(strrep(" ", padding), text, strrep(" ", padding))
+    pad <- pmax(pad, 0)
+    switch(align,
+           left = paste0(cell, strrep(" ", pad)),
+           right = paste0(strrep(" ", pad), cell),
+           center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
+           cell)
   }
 
-  make_row <- function(cells, l = "│", r = "│", sep = "│") {
-    paste0(l, paste(mapply(pad_cell, cells, width, align), collapse = sep), r)
-  }
+  # Build horizontal border line, width + 2 per col for padding and separators
+  border_pieces <- vapply(width, function(w) strrep("-", w + 2), character(1))
+  horizontal_border <- paste0("+", paste(border_pieces, collapse = "+"), "+")
 
-  make_line <- function(left, sep, right, fill = "─") {
-    pieces <- mapply(function(w) strrep(fill, w + 2 * padding), width)
-    paste0(left, paste(pieces, collapse = sep), right)
-  }
+  header_line <- paste0("|", paste(mapply(function(name, w, a) {
+    paste0(" ", pad_cell(name, w, a), " ")
+  }, header, width, align), collapse = "|"), "|")
 
-  top_line    <- make_line("┌", "┬", "┐")
-  header_line <- make_row(header)
-  mid_line    <- make_line("├", "┼", "┤")
-  bottom_line <- make_line("└", "┴", "┘")
-
-  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
-    row <- as.character(rows_df[i, ])
-    if (!is.null(row_names)) row <- c(row_names[i], row)
-    make_row(row)
-  }, character(1))
+  row_lines <- apply(rows_df, 1, function(row) {
+    paste0("|", paste(mapply(function(cell, w, a) {
+      paste0(" ", pad_cell(cell, w, a), " ")
+    }, row, width, align), collapse = "|"), "|")
+  })
 
   output <- c()
   output <- c(output, rep("", space[1]))
   caption <- caption %||% attr(formatted, "caption")
   if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
   output <- c(output,
-              top_line,
+              horizontal_border,
               header_line,
-              mid_line,
+              horizontal_border,
               row_lines,
-              bottom_line,
+              horizontal_border,
               rep("", space[2]))
 
   cat(paste(output, collapse = "\n"), "\n")
-  invisible(formatted)
+  invisible(output)
 }
 
-
-#' Print a formatted table object as LaTeX code
+#' Render a TableR Object as a LaTeX Table
 #'
-#' @param formatted A formatted table or list of formatted tables.
-#' @param caption Optional caption(s) for the table(s).
-#' @param space Numeric vector of length 2 for spacing before and after output.
-#' @return Invisibly returns the formatted object.
+#' Converts a `tableR` object into LaTeX tabular syntax, respecting column alignments
+#' and optionally including row names and a caption.
 #'
-#' @examples
-#' tbl <- format_table(head(mtcars))
-#' style_latex(tbl)
+#' @param formatted A `tableR` object (or `tableR_list`) typically created by `format_table()`.
+#'   Must have attributes for alignment, row names, and optionally a caption.
+#' @param caption Optional character string to override the caption attribute.
+#' @param space Integer vector of length 1 or 2 specifying the number of blank lines
+#'   to insert before and after the table output. If length 1, uses the same number before and after.
 #'
-#' # For a list of formatted tables
-#' tbl_list <- list(
-#'   format_table(head(mtcars)),
-#'   format_table(head(iris))
-#' )
-#' style_latex(tbl_list, caption = c("Mtcars Table", "Iris Table"))
-#' 
+#' @return Invisibly returns a character vector of LaTeX lines forming the table.
+#'   Also prints the LaTeX table code to the console.
+#'
 #' @export
 style_latex <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
     n <- length(formatted)
     captions <- if (!is.null(caption)) rep_len(caption, n) else
       vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    invisible(lapply(seq_len(n), function(i) {
-      style_latex(formatted[[i]], caption = captions[[i]], space = space)
-    }))
-    return(invisible(formatted))
+    outs <- vector("list", n)
+    for (i in seq_len(n)) {
+      outs[[i]] <- style_latex(formatted[[i]], caption = captions[[i]], space = space)
+    }
+    return(invisible(outs))
   }
-  
+
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
-  
-  escape_latex <- function(text) {
-    text <- gsub("\\\\", "\\textbackslash{}", text)
-    text <- gsub("&", "\\&", text)
-    text <- gsub("%", "\\%", text)
-    text <- gsub("\\$", "\\$", text)
-    text <- gsub("#", "\\#", text)
-    text <- gsub("_", "\\_", text)
-    text <- gsub("\\{", "\\{", text)
-    text <- gsub("\\}", "\\}", text)
-    text <- gsub("~", "\\textasciitilde{}", text)
-    text <- gsub("\\^", "\\textasciicircum{}", text)
-    text
-  }
-  
+
   header <- names(formatted)
   rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
   row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
-  
+
   if (!is.null(row_names)) {
     header <- c("", header)
+    align <- c("left", align)
   }
-  
-  col_align <- sapply(align, function(a) {
-    switch(a,
-           left = "l",
-           right = "r",
-           center = "c",
-           "l")
-  })
-  if (!is.null(row_names)) col_align <- c("l", col_align)
-  
-  output <- c()
-  output <- c(output, rep("", space[1]))
-  output <- c(output, "\\begin{table}[ht]")
-  output <- c(output, "\\centering")
-  
-  cap <- caption %||% attr(formatted, "caption")
-  if (!is.null(cap) && nzchar(cap)) {
-    output <- c(output, paste0("\\caption{", escape_latex(cap), "}"))
-  }
-  
-  output <- c(output, paste0("\\begin{tabular}{", paste(col_align, collapse = ""), "}"))
-  output <- c(output, "\\hline")
-  
-  output <- c(output, paste(escape_latex(header), collapse = " & "), "\\\\")
-  output <- c(output, "\\hline")
-  
+
+  align_map <- c(left = "l", center = "c", right = "r")
+
+  latex_align <- if (!is.null(align)) {
+    sapply(align, function(a) {
+      if (a %in% names(align_map)) align_map[[a]] else "l"
+    })
+  } else NULL
+
+  col_align <- paste(latex_align, collapse = "")
+
+  lines <- c("\\begin{tabular}{", col_align, "}")
+  lines <- c(lines, "\\hline")
+  lines <- c(lines, paste(c(header), collapse = " & "), "\\\\")
+  lines <- c(lines, "\\hline")
+
   for (i in seq_len(nrow(rows_df))) {
     row <- as.character(rows_df[i, ])
     if (!is.null(row_names)) row <- c(row_names[i], row)
-    output <- c(output, paste(escape_latex(row), collapse = " & "), "\\\\")
+    lines <- c(lines, paste(row, collapse = " & "), "\\\\")
   }
-  
-  output <- c(output, "\\hline")
-  output <- c(output, "\\end{tabular}")
-  output <- c(output, "\\end{table}")
-  output <- c(output, rep("", space[2]))
-  
+
+  lines <- c(lines, "\\hline", "\\end{tabular}")
+
+  output <- c()
+  output <- c(output, rep("", space[1]))
+  caption <- caption %||% attr(formatted, "caption")
+  if (!is.null(caption) && nzchar(caption)) output <- c(output, paste0("\\caption{", caption, "}"), "")
+  output <- c(output, lines, rep("", space[2]))
+
   cat(paste(output, collapse = "\n"), "\n")
-  invisible(formatted)
+  invisible(output)
 }
 
-
-#' Print a formatted table object as HTML
+#' Render a TableR Object as an HTML Table
 #'
-#' @param formatted A formatted table or list of formatted tables.
-#' @param caption Optional caption(s) for the table(s).
-#' @param space Numeric vector of length 2 for spacing before and after output.
-#' @return Invisibly returns the formatted object.
-#' @examples
-#' tbl <- format_table(head(mtcars))
-#' style_html(tbl)
+#' Converts a `tableR` object into an HTML `<table>` element, including `<thead>`, `<tbody>`,
+#' optional row names, and an optional `<caption>`.
 #'
-#' # For a list of formatted tables
-#' tbl_list <- list(
-#'   format_table(head(mtcars)),
-#'   format_table(head(iris))
-#' )
-#' style_html(tbl_list, caption = c("Mtcars Table", "Iris Table"))
+#' @param formatted A `tableR` object (or `tableR_list`) typically created by `format_table()`.
+#'   Should have attributes for row names and caption.
+#' @param caption Optional character string to override the caption attribute.
+#' @param space Integer vector of length 1 or 2 specifying the number of blank lines
+#'   to insert before and after the table output. If length 1, uses the same number before and after.
+#'
+#' @return Invisibly returns a character vector of HTML lines forming the table.
+#'   Also prints the HTML code to the console.
+#'
 #' @export
 style_html <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
     n <- length(formatted)
     captions <- if (!is.null(caption)) rep_len(caption, n) else
       vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    invisible(lapply(seq_len(n), function(i) {
-      style_html(formatted[[i]], caption = captions[[i]], space = space)
-    }))
-    return(invisible(formatted))
+    outs <- vector("list", n)
+    for (i in seq_len(n)) {
+      outs[[i]] <- style_html(formatted[[i]], caption = captions[[i]], space = space)
+    }
+    return(invisible(outs))
   }
 
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
-
-  escape_html <- function(text) {
-    text <- gsub("&", "&amp;", text)
-    text <- gsub("<", "&lt;", text)
-    text <- gsub(">", "&gt;", text)
-    text <- gsub("\"", "&quot;", text)
-    text <- gsub("'", "&#39;", text)
-    text
-  }
 
   header <- names(formatted)
   rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
@@ -466,30 +502,26 @@ style_html <- function(formatted, caption = NULL, space = c(1, 1)) {
 
   output <- c()
   output <- c(output, rep("", space[1]))
-  output <- c(output, "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">")
-
-  cap <- caption %||% attr(formatted, "caption")
-  if (!is.null(cap) && nzchar(cap)) {
-    output <- c(output, paste0("<caption>", escape_html(cap), "</caption>"))
+  caption <- caption %||% attr(formatted, "caption")
+  if (!is.null(caption) && nzchar(caption)) {
+    output <- c(output, paste0("<caption>", caption, "</caption>"))
   }
+  output <- c(output, "<table>")
+  output <- c(output, "  <thead>")
+  output <- c(output, "    <tr>", paste0("      <th>", header, "</th>", collapse = ""), "    </tr>")
+  output <- c(output, "  </thead>")
+  output <- c(output, "  <tbody>")
 
-  # Header row
-  header_cells <- paste0("<th>", escape_html(header), "</th>", collapse = "")
-  output <- c(output, paste0("<thead><tr>", header_cells, "</tr></thead>"))
-
-  # Body rows
-  output <- c(output, "<tbody>")
   for (i in seq_len(nrow(rows_df))) {
     row <- as.character(rows_df[i, ])
     if (!is.null(row_names)) row <- c(row_names[i], row)
-    row_cells <- paste0("<td>", escape_html(row), "</td>", collapse = "")
-    output <- c(output, paste0("<tr>", row_cells, "</tr>"))
+    output <- c(output, "    <tr>", paste0("      <td>", row, "</td>", collapse = ""), "    </tr>")
   }
-  output <- c(output, "</tbody>")
 
+  output <- c(output, "  </tbody>")
   output <- c(output, "</table>")
   output <- c(output, rep("", space[2]))
 
   cat(paste(output, collapse = "\n"), "\n")
-  invisible(formatted)
+  invisible(output)
 }
