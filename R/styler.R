@@ -24,71 +24,58 @@
 #' @export
 style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    lapply(formatted, function(tbl) {
-      style_console(tbl, caption = attr(tbl, "caption"), space = attr(formatted, "space"))
-    })
+    for (tbl in formatted) {
+      style_console(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
+    }
     return(invisible(formatted))
   }
   
-  if (!inherits(formatted, "tableR")) {
-    stop("Input must be a 'tableR' object from format_table().")
-  }
+  if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
+  if (length(space) == 1) space <- rep(space, 2)
   
-  if (length(space) == 1) {
-    space <- rep(space, 2)
-  }
-  
+  header <- names(formatted)
+  rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
-  padding <- attr(formatted, "padding")
-  row_names <- attr(formatted, "row_names")
-  caption <- if (is.null(caption)) attr(formatted, "caption") else caption
+  padding <- attr(formatted, "padding") %||% 0
   
-  col_names <- names(formatted)
-  data_rows <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  width <- width + padding * 2
   
-  # Prepend row names if present
   if (!is.null(row_names)) {
-    col_names <- c("", col_names)
+    header <- c("", header)
     align <- c("left", align)
-    width <- c(max(nchar(row_names)), width)
-    data_rows <- cbind(row_names, data_rows, stringsAsFactors = FALSE)
+    name_width <- max(1, max(nchar(row_names)))
+    width <- c(name_width + padding * 2, width)
   }
   
   pad_cell <- function(cell, width, align) {
+    inner_width <- width - 2 * padding
     cell <- as.character(cell)
-    pad <- width - nchar(cell)
-    if (pad < 0) {
-      return(substr(cell, 1, width))
-    }
-    switch(align,
-           left   = paste0(cell, strrep(" ", pad)),
-           right  = paste0(strrep(" ", pad), cell),
-           center = {
-             left_pad <- floor(pad / 2)
-             right_pad <- ceiling(pad / 2)
-             paste0(strrep(" ", left_pad), cell, strrep(" ", right_pad))
-           },
-           stop("Invalid alignment")
-    )
+    pad <- inner_width - nchar(cell)
+    padded <- switch(align,
+                     left = paste0(cell, strrep(" ", pad)),
+                     right = paste0(strrep(" ", pad), cell),
+                     center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
+                     cell)
+    paste0(strrep(" ", padding), padded, strrep(" ", padding))
   }
   
-  header_line <- paste(mapply(pad_cell, col_names, width, align), collapse = strrep(" ", padding))
+  header_line <- paste(mapply(pad_cell, header, width, align), collapse = " ")
   
-  row_lines <- apply(data_rows, 1, function(row) {
-    paste(mapply(pad_cell, row, width, align), collapse = strrep(" ", padding))
-  })
+  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
+    row <- as.character(rows_df[i, ])
+    if (!is.null(row_names)) row <- c(row_names[i], row)
+    paste(mapply(pad_cell, row, width, align), collapse = " ")
+  }, character(1))
   
-  output <- c()
-  output <- c(output, rep("", space[1]))
-  if (!is.null(caption)) {
-    output <- c(output, caption, "")
-  }
+  output <- c(rep("", space[1]))
+  caption <- caption %||% attr(formatted, "caption")
+  if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
   output <- c(output, header_line, row_lines, rep("", space[2]))
   
   cat(paste(output, collapse = "\n"), "\n")
-  
-  invisible(formatted)
+  invisible(output)
 }
 
 #' Format a 'tableR' Object as a Markdown Table
@@ -108,86 +95,67 @@ style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
 #' @export
 style_markdown <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    lapply(formatted, function(tbl) {
-      style_markdown(tbl, caption = attr(tbl, "caption"), space = attr(formatted, "space"))
-    })
+    for (tbl in formatted) {
+      style_markdown(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
+    }
     return(invisible(formatted))
   }
   
-  if (!inherits(formatted, "tableR")) {
-    stop("Input must be a 'tableR' object from format_table().")
-  }
-  
+  if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
   
+  header <- names(formatted)
+  rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
-  row_names <- attr(formatted, "row_names")
-  caption <- if (is.null(caption)) attr(formatted, "caption") else caption
+  padding <- attr(formatted, "padding") %||% 0
   
-  col_names <- names(formatted)
-  data_rows <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  width <- width + padding * 2
   
-  # Handle row names if present
   if (!is.null(row_names)) {
-    row_names <- ifelse(is.na(row_names), "", row_names)
-    max_width <- max(nchar(row_names), na.rm = TRUE)
-    if (!is.finite(max_width) || max_width < 1) max_width <- 1L
-    width <- c(max_width, width)
+    header <- c("", header)
     align <- c("left", align)
-    col_names <- c("", col_names)
-    data_rows <- cbind(row_names, data_rows, stringsAsFactors = FALSE)
+    name_width <- max(1, max(nchar(row_names)))
+    width <- c(name_width + padding * 2, width)
   }
-  
-  # Ensure width vector matches number of columns
-  n_cols <- length(col_names)
-  if (length(width) < n_cols) {
-    width <- c(width, rep(1L, n_cols - length(width)))
-  } else if (length(width) > n_cols) {
-    width <- width[seq_len(n_cols)]
-  }
-  
-  # Force minimum width of 1 for all columns
-  width <- pmax(width, 1L)
   
   pad_cell <- function(cell, width, align) {
     cell <- as.character(cell)
-    cell[is.na(cell)] <- ""
     pad <- width - nchar(cell)
-    pad <- pmax(pad, 0)
     switch(align,
-           left   = paste0(cell, strrep(" ", pad)),
-           right  = paste0(strrep(" ", pad), cell),
+           left = paste0(cell, strrep(" ", pad)),
+           right = paste0(strrep(" ", pad), cell),
            center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
            cell)
   }
   
-  align_marker <- function(a, w) {
-    # Defensive: if width < 1, set to 1 to avoid strrep error
-    if (w < 1) w <- 1
-    if (a == "left")   return(paste0(":", strrep("-", w - 1)))
-    if (a == "right")  return(paste0(strrep("-", w - 1), ":"))
-    if (a == "center") return(paste0(":", strrep("-", max(w - 2, 0)), ":"))
-    strrep("-", w)
+  alignment_row <- function(align, width) {
+    sapply(seq_along(align), function(i) {
+      switch(align[i],
+             left = paste0(":", strrep("-", width[i] - 1)),
+             right = paste0(strrep("-", width[i] - 1), ":"),
+             center = paste0(":", strrep("-", width[i] - 2), ":"),
+             strrep("-", width[i]))
+    })
   }
   
-  header_line <- paste0("| ", paste(mapply(pad_cell, col_names, width, align), collapse = " | "), " |")
-  align_line  <- paste0("| ", paste(mapply(align_marker, align, width), collapse = " | "), " |")
+  header_line <- paste0("| ", paste(mapply(pad_cell, header, width, align), collapse = " | "), " |")
+  divider <- paste0("| ", paste(alignment_row(align, width), collapse = " | "), " |")
   
-  data_lines <- apply(data_rows, 1, function(row) {
-    row <- ifelse(is.na(row), "", row)
+  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
+    row <- as.character(rows_df[i, ])
+    if (!is.null(row_names)) row <- c(row_names[i], row)
     paste0("| ", paste(mapply(pad_cell, row, width, align), collapse = " | "), " |")
-  })
+  }, character(1))
   
-  md <- c()
-  md <- c(md, rep("", space[1]))
-  if (!is.null(caption) && nzchar(caption)) {
-    md <- c(md, caption, "")
-  }
-  md <- c(md, header_line, align_line, data_lines, rep("", space[2]))
+  output <- c(rep("", space[1]))
+  caption <- caption %||% attr(formatted, "caption")
+  if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
+  output <- c(output, header_line, divider, row_lines, rep("", space[2]))
   
-  cat(paste(md, collapse = "\n"), "\n")
-  invisible(md)
+  cat(paste(output, collapse = "\n"), "\n")
+  invisible(output)
 }
 
 #' Style a 'tableR' Object as an APA-Style Table
@@ -209,83 +177,60 @@ style_markdown <- function(formatted, caption = NULL, space = c(1, 1)) {
 #' @export
 style_apa <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    n <- length(formatted)
-    captions <- if (!is.null(caption)) rep_len(caption, n) else
-      vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    outs <- vector("list", n)
-    for (i in seq_len(n)) {
-      outs[[i]] <- style_apa(formatted[[i]], caption = captions[[i]], space = space)
+    for (tbl in formatted) {
+      style_apa(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
     }
-    return(invisible(outs))
+    return(invisible(formatted))
   }
-
+  
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
-
+  
+  header <- names(formatted)
+  rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
+  row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
-  row_names <- attr(formatted, "row_names")
-  caption <- if (is.null(caption)) attr(formatted, "caption") else caption
-
-  col_names <- names(formatted)
-  data_rows <- as.data.frame(formatted, stringsAsFactors = FALSE)
-
-  # Handle row names
+  padding <- attr(formatted, "padding") %||% 0
+  
+  width <- width + padding * 2
+  
   if (!is.null(row_names)) {
-    row_names <- ifelse(is.na(row_names), "", row_names)
-    max_width <- max(nchar(row_names), na.rm = TRUE)
-    if (!is.finite(max_width) || max_width < 1) max_width <- 1L
-    width <- c(max_width, width)
+    header <- c("", header)
     align <- c("left", align)
-    col_names <- c("", col_names)
-    data_rows <- cbind(row_names, data_rows, stringsAsFactors = FALSE)
+    name_width <- max(1, max(nchar(row_names)))
+    width <- c(name_width + padding * 2, width)
   }
-
-  # Make sure width matches column count
-  n_cols <- length(col_names)
-  if (length(width) < n_cols) {
-    width <- c(width, rep(1L, n_cols - length(width)))
-  } else if (length(width) > n_cols) {
-    width <- width[seq_len(n_cols)]
-  }
-  width <- pmax(width, 1L)  # Ensure minimum width 1
-
+  
   pad_cell <- function(cell, width, align) {
+    inner_width <- width - 2 * padding
     cell <- as.character(cell)
-    cell[is.na(cell)] <- ""
-    pad <- width - nchar(cell)
-    pad <- pmax(pad, 0)
-    switch(align,
-      left   = paste0(cell, strrep(" ", pad)),
-      right  = paste0(strrep(" ", pad), cell),
-      center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
-      cell
-    )
+    pad <- inner_width - nchar(cell)
+    padded <- switch(align,
+                     left = paste0(cell, strrep(" ", pad)),
+                     right = paste0(strrep(" ", pad), cell),
+                     center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
+                     cell)
+    paste0(strrep(" ", padding), padded, strrep(" ", padding))
   }
-
-  # Compose horizontal lines to exactly match table width including column separators
-  total_width <- sum(width) + 3 * length(width) + 1 # width + 3 spaces per col + 1 for starting '+'
-  horiz_line <- paste0("+", paste0(vapply(width, function(w) strrep("-", w + 2), character(1)), collapse = "+"), "+")
-
-  header_line <- paste0("|", paste(mapply(function(name, w, a) {
-    paste0(" ", pad_cell(name, w, a), " ")
-  }, col_names, width, align), collapse = "|"), "|")
-
-  data_lines <- apply(data_rows, 1, function(row) {
-    paste0("|", paste(mapply(function(cell, w, a) {
-      paste0(" ", pad_cell(cell, w, a), " ")
-    }, row, width, align), collapse = "|"), "|")
-  })
-
-  md <- c()
-  md <- c(md, rep("", space[1]))
-  if (!is.null(caption) && nzchar(caption)) {
-    md <- c(md, caption, "")
-  }
-  md <- c(md, horiz_line, header_line, horiz_line, data_lines, horiz_line, rep("", space[2]))
-
-  cat(paste(md, collapse = "\n"), "\n")
-  invisible(md)
+  
+  horizontal_border <- strrep("-", sum(width) + (length(width) - 1))
+  
+  header_line <- paste(mapply(pad_cell, header, width, align), collapse = " ")
+  
+  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
+    row <- as.character(rows_df[i, ])
+    if (!is.null(row_names)) row <- c(row_names[i], row)
+    paste(mapply(pad_cell, row, width, align), collapse = " ")
+  }, character(1))
+  
+  output <- c(rep("", space[1]))
+  caption <- caption %||% attr(formatted, "caption")
+  if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
+  output <- c(output, horizontal_border, header_line, horizontal_border, row_lines, horizontal_border, rep("", space[2]))
+  
+  cat(paste(output, collapse = "\n"), "\n")
+  invisible(output)
 }
 
 #' Render a TableR Object in Box Drawing Style
@@ -308,83 +253,59 @@ style_apa <- function(formatted, caption = NULL, space = c(1, 1)) {
 #' @export
 style_box <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    n <- length(formatted)
-    captions <- if (!is.null(caption)) rep_len(caption, n) else
-      vapply(formatted, function(x) attr(x, "caption") %||% "", character(1))
-    outs <- vector("list", n)
-    for (i in seq_len(n)) {
-      outs[[i]] <- style_box(formatted[[i]], caption = captions[[i]], space = space)
+    for (tbl in formatted) {
+      style_box(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
     }
-    return(invisible(outs))
+    return(invisible(formatted))
   }
-
+  
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
-
+  
   header <- names(formatted)
   rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
   row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
-
-  # Handle row names
+  padding <- attr(formatted, "padding") %||% 0
+  
+  width <- width + padding * 2
+  
   if (!is.null(row_names)) {
-    row_names <- ifelse(is.na(row_names), "", row_names)
-    max_width <- max(nchar(row_names), na.rm = TRUE)
-    if (!is.finite(max_width) || max_width < 1) max_width <- 1L
-    width <- c(max_width, width)
-    align <- c("left", align)
     header <- c("", header)
-    rows_df <- cbind(row_names, rows_df, stringsAsFactors = FALSE)
+    align <- c("left", align)
+    name_width <- max(1, max(nchar(row_names)))
+    width <- c(name_width + padding * 2, width)
   }
-
-  # Make sure width matches columns count
-  n_cols <- length(header)
-  if (length(width) < n_cols) {
-    width <- c(width, rep(1L, n_cols - length(width)))
-  } else if (length(width) > n_cols) {
-    width <- width[seq_len(n_cols)]
-  }
-  width <- pmax(width, 1L)  # ensure minimum width 1
-
+  
   pad_cell <- function(cell, width, align) {
+    inner_width <- width - 2 * padding
     cell <- as.character(cell)
-    cell[is.na(cell)] <- ""
-    pad <- width - nchar(cell)
-    pad <- pmax(pad, 0)
-    switch(align,
-           left = paste0(cell, strrep(" ", pad)),
-           right = paste0(strrep(" ", pad), cell),
-           center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
-           cell)
+    pad <- inner_width - nchar(cell)
+    padded <- switch(align,
+                     left = paste0(cell, strrep(" ", pad)),
+                     right = paste0(strrep(" ", pad), cell),
+                     center = paste0(strrep(" ", floor(pad / 2)), cell, strrep(" ", ceiling(pad / 2))),
+                     cell)
+    paste0(strrep(" ", padding), padded, strrep(" ", padding))
   }
-
-  # Build horizontal border line, width + 2 per col for padding and separators
-  border_pieces <- vapply(width, function(w) strrep("-", w + 2), character(1))
+  
+  border_pieces <- vapply(width, function(w) paste0(rep("-", w), collapse = ""), character(1))
   horizontal_border <- paste0("+", paste(border_pieces, collapse = "+"), "+")
-
-  header_line <- paste0("|", paste(mapply(function(name, w, a) {
-    paste0(" ", pad_cell(name, w, a), " ")
-  }, header, width, align), collapse = "|"), "|")
-
-  row_lines <- apply(rows_df, 1, function(row) {
-    paste0("|", paste(mapply(function(cell, w, a) {
-      paste0(" ", pad_cell(cell, w, a), " ")
-    }, row, width, align), collapse = "|"), "|")
-  })
-
-  output <- c()
-  output <- c(output, rep("", space[1]))
+  
+  header_line <- paste0("|", paste(mapply(pad_cell, header, width, align), collapse = "|"), "|")
+  
+  row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
+    row <- as.character(rows_df[i, ])
+    if (!is.null(row_names)) row <- c(row_names[i], row)
+    paste0("|", paste(mapply(pad_cell, row, width, align), collapse = "|"), "|")
+  }, character(1))
+  
+  output <- c(rep("", space[1]))
   caption <- caption %||% attr(formatted, "caption")
   if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
-  output <- c(output,
-              horizontal_border,
-              header_line,
-              horizontal_border,
-              row_lines,
-              horizontal_border,
-              rep("", space[2]))
-
+  output <- c(output, horizontal_border, header_line, horizontal_border, row_lines, horizontal_border, rep("", space[2]))
+  
   cat(paste(output, collapse = "\n"), "\n")
   invisible(output)
 }
