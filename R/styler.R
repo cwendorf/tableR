@@ -31,26 +31,26 @@ style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
     }
     return(invisible(formatted))
   }
-  
+
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
   if (length(space) == 1) space <- rep(space, 2)
-  
+
   header <- names(formatted)
   rows_df <- as.data.frame(formatted, stringsAsFactors = FALSE)
   row_names <- attr(formatted, "row_names")
   align <- attr(formatted, "align")
   width <- attr(formatted, "width")
   padding <- attr(formatted, "padding") %||% 0
-  
+
   width <- width + padding * 2
-  
+
   if (!is.null(row_names)) {
     header <- c("", header)
     align <- c("left", align)
     name_width <- max(1, max(nchar(row_names)))
     width <- c(name_width + padding * 2, width)
   }
-  
+
   pad_cell <- function(cell, width, align) {
     inner_width <- width - 2 * padding
     cell <- as.character(cell)
@@ -62,20 +62,20 @@ style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
                      cell)
     paste0(strrep(" ", padding), padded, strrep(" ", padding))
   }
-  
+
   header_line <- paste(mapply(pad_cell, header, width, align), collapse = " ")
-  
+
   row_lines <- vapply(seq_len(nrow(rows_df)), function(i) {
     row <- as.character(rows_df[i, ])
     if (!is.null(row_names)) row <- c(row_names[i], row)
     paste(mapply(pad_cell, row, width, align), collapse = " ")
   }, character(1))
-  
+
   output <- c(rep("", space[1]))
   caption <- caption %||% attr(formatted, "caption")
   if (!is.null(caption) && nzchar(caption)) output <- c(output, caption, "")
   output <- c(output, header_line, row_lines, rep("", space[2]))
-  
+
   cat(paste(output, collapse = "\n"), "\n")
   invisible(output)
 }
