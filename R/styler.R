@@ -8,6 +8,8 @@
 #' @param a First value.
 #' @param b Second value to use if `a` is NULL.
 #' @return Value of `a` if not NULL, else `b`.
+#'
+#' @noRd
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
 #' Render a Formatted Table to the Console with Styling

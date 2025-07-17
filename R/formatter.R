@@ -128,6 +128,8 @@ format_table <- function(x, width = 8, align = "right", padding = 1,
 #'
 #' @param x A formatted table object created by \code{format_table}.
 #' @param ... Additional arguments (currently ignored).
+#'
+#' @noRd
 print.tableR <- function(x, ...) {
   style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
   invisible(x)
@@ -137,6 +139,8 @@ print.tableR <- function(x, ...) {
 #'
 #' @param x A list of formatted table objects created by \code{format_table}.
 #' @param ... Additional arguments (currently ignored).
+#'
+#' @noRd
 print.tableR_list <- function(x, ...) {
   style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
   invisible(x)
