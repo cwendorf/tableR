@@ -24,12 +24,26 @@
 #' @return Invisibly returns the input `formatted` object.
 #'
 #' @export
+#' Render a Formatted Table to the Console with Styling
+#'
+#' Prints a table object created by [format_table()] to the console with aligned columns,
+#' optional caption, and customizable vertical spacing. Useful for clean, readable console output.
+#'
+#' @param formatted An object of class `"tableR"` or `"tableR_list"` as returned by [format_table()].
+#' @param caption Optional character string to override the object's caption.
+#' @param space Integer of length 1 or 2. Blank lines before and after the table.
+#'
+#' @return Invisibly returns NULL.
+#'
+#' @export
 style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
-    for (tbl in formatted) {
+    for (i in seq_along(formatted)) {
+      tbl <- formatted[[i]]
       style_console(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
+      if (i < length(formatted)) cat("\n")
     }
-    return(invisible(formatted))
+    return(invisible(NULL))
   }
 
   if (!inherits(formatted, "tableR")) stop("Input must be a 'tableR' object.")
@@ -77,7 +91,7 @@ style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
   output <- c(output, header_line, row_lines, rep("", space[2]))
 
   cat(paste(output, collapse = "\n"), "\n")
-  invisible(output)
+  invisible(NULL)
 }
 
 #' Format a 'tableR' Object as a Markdown Table
