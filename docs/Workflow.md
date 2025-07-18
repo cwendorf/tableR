@@ -1,6 +1,3 @@
-tableR Workflow
-================
-
 ## tableR Workflow
 
 - [Introduction](#introduction)
