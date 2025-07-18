@@ -174,9 +174,10 @@ knit_print.tableR <- function(x, ...) {
 #' @return An object of class \code{knitr_asis}, rendering the tables as preformatted text.
 #'
 #' @export
-#' @export
 knit_print.tableR_list <- function(x, ...) {
-  outputs <- lapply(x, function(tbl) paste(style_plain(tbl), collapse = "\n"))
-  out <- paste(outputs, collapse = "\n")
+  outputs <- lapply(x, function(tbl) {
+    paste(capture.output(style_plain(tbl)), collapse = "\n")
+  })
+  out <- paste(outputs, collapse = "\n\n")
   knitr::asis_output(out)
 }
