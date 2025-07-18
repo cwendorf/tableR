@@ -128,4 +128,4 @@ lst <- list(
   unnamed_vec = c(10, 20, 30),
   mat = matrix(1:6, ncol = 2)
 )
-format_table(lst, width=8, digits=3)
+format_table(lst, width=8, digits=3) |> style_plain()

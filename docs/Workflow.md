@@ -269,3 +269,43 @@ format_table(vec_unnamed)
 
     ##      V1    V2
     ## 1 10.10 20.20
+
+``` r
+# Lists (even with mixed input)
+lst <- list(
+  df = data.frame(a = 1:3, b = c(2.345, 3.456, 4.567)),
+  named_vec = c(foo = 1.23, bar = 4.56),
+  unnamed_vec = c(10, 20, 30),
+  mat = matrix(1:6, ncol = 2)
+)
+format_table(lst, width=8, digits=3) |> style_plain()
+```
+
+    ## 
+    ## df
+    ## 
+    ##               a           b
+    ## 1         1.000       2.345
+    ## 2         2.000       3.456
+    ## 3         3.000       4.567
+    ##  
+    ## 
+    ## named_vec
+    ## 
+    ##             foo         bar
+    ## 1         1.230       4.560
+    ##  
+    ## 
+    ## unnamed_vec
+    ## 
+    ##              V1          V2          V3
+    ## 1        10.000      20.000      30.000
+    ##  
+    ## 
+    ## mat
+    ## 
+    ##              V1          V2
+    ## 1         1.000       4.000
+    ## 2         2.000       5.000
+    ## 3         3.000       6.000
+    ## 
