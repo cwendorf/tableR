@@ -32,7 +32,7 @@
 style_plain <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
     for (tbl in formatted) {
-      style_console(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
+      style_plain(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
     }
     return(invisible(formatted))
   }
