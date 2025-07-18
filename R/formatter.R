@@ -131,7 +131,7 @@ format_table <- function(x, width = 8, align = "right", padding = 1,
 #'
 #' @noRd
 print.tableR <- function(x, ...) {
-  style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
+  style_plain(x, caption = attr(x, "caption"), space = attr(x, "space"))
   invisible(x)
 }
 
@@ -142,6 +142,6 @@ print.tableR <- function(x, ...) {
 #'
 #' @noRd
 print.tableR_list <- function(x, ...) {
-  style_console(x, caption = attr(x, "caption"), space = attr(x, "space"))
+  style_plain(x, caption = attr(x, "caption"), space = attr(x, "space"))
   invisible(x)
 }

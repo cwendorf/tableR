@@ -12,7 +12,7 @@
 #' @noRd
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-#' Format a 'tableR' Object as Plain Text for Console or knitr Output
+#' Format a 'tableR' Object as Plain Text
 #'
 #' Formats a \code{"tableR"} object (or \code{"tableR_list"}) into a plain-text,
 #' aligned table suitable for printing in the R console or in knitr output.
@@ -29,7 +29,7 @@
 #'         Also prints the table to the console or knitr output.
 #'
 #' @export
-style_console <- function(formatted, caption = NULL, space = c(1, 1)) {
+style_plain <- function(formatted, caption = NULL, space = c(1, 1)) {
   if (inherits(formatted, "tableR_list")) {
     for (tbl in formatted) {
       style_console(tbl, caption = attr(tbl, "caption"), space = attr(tbl, "space"))
