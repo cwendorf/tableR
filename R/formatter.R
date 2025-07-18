@@ -159,8 +159,8 @@ print.tableR_list <- function(x, ...) {
 #'
 #' @export
 knit_print.tableR <- function(x, ...) {
-  out <- paste(style_plain(x), collapse = "\n")
-  knitr::asis_output(out)
+  out <- capture.output(style_plain(x))
+  knitr::asis_output(paste(out, collapse = "\n"))
 }
 
 #' knitr Print Method for `tableR_list` Objects
@@ -175,9 +175,6 @@ knit_print.tableR <- function(x, ...) {
 #'
 #' @export
 knit_print.tableR_list <- function(x, ...) {
-  outputs <- lapply(x, function(tbl) {
-    paste(capture.output(style_plain(tbl)), collapse = "\n")
-  })
-  out <- paste(outputs, collapse = "\n\n")
-  knitr::asis_output(out)
+  out <- capture.output(style_plain(x))
+  knitr::asis_output(paste(out, collapse = "\n"))
 }
