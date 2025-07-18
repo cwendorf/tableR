@@ -142,7 +142,11 @@ print.tableR <- function(x, ...) {
 #'
 #' @noRd
 print.tableR_list <- function(x, ...) {
-  style_plain(x, caption = attr(x, "caption"), space = attr(x, "space"))
+  if (isTRUE(getOption("knitr.in.progress"))) {
+    knit_print.tableR_list(x)
+  } else {
+    style_plain(x, caption = attr(x, "caption"), space = attr(x, "space"))
+  }
   invisible(x)
 }
 
