@@ -68,10 +68,10 @@ df_stats <- data.frame(
 )
 rownames(df_stats) <- c("Group 1", "Group 2")
 
-# Console styling
+# Plain styling
 df_stats |>
   format_table(digits = c(1, 4, 0)) |>
-  style_console(caption = "Table 1: Summary", space = c(1, 1))
+  style_plain(caption = "Table 1: Summary", space = c(1, 1))
 
 # Markdown styling
 df_stats |>
@@ -85,10 +85,10 @@ df_stats |>
 
 ### Step 4: Save the Output
 
-# Save console-styled table
+# Save plain-styled table
 df_stats |>
   format_table(digits = 2) |>
-  style_console(caption = "My Table") |>
+  style_plain(caption = "My Table") |>
   save_output(file = "my_table.txt")
 
 # Save APA-styled table

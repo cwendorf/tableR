@@ -118,7 +118,7 @@ format_table(df_trunc,
 
 ### Step 3 - Style the Table
 
-After formatting, apply styling using `style_console()`, `style_markdown()`, or `style_apa()`. Spacing of the output vertically can be specified.
+After formatting, apply styling using `style_plain()`, `style_markdown()`, or `style_apa()`. Spacing of the output vertically can be specified.
 
 ```{r}
 # Create a data frame
@@ -131,10 +131,10 @@ rownames(df_stats) <- c("Group 1", "Group 2")
 ```
 
 ```{r}
-# Console styling
+# Plain styling
 df_stats |>
   format_table(digits = c(1, 4, 0)) |>
-  style_console(caption = "Table 1: Summary", space = c(1, 1))
+  style_plain(caption = "Table 1: Summary", space = c(1, 1))
 ```
 
 ```{r}
@@ -156,10 +156,10 @@ df_stats |>
 If desired, the formatted and styled output can be exported to a file. (You may find it helpful to `getwd()' first to find where you files will be saved.)
 
 ```{r eval=FALSE}
-# Save console-styled table
+# Save plain-styled table
 df_stats |>
   format_table(digits = 2) |>
-  style_console(caption = "My Table") |>
+  style_plain(caption = "My Table") |>
   save_output(file = "my_table.txt")
 ```
 
