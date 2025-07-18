@@ -145,3 +145,36 @@ print.tableR_list <- function(x, ...) {
   style_plain(x, caption = attr(x, "caption"), space = attr(x, "space"))
   invisible(x)
 }
+
+#' knitr Print Method for `tableR` Objects
+#'
+#' This method allows `tableR` formatted tables to render cleanly in `knitr`-based documents
+#' (such as R Markdown). It uses `style_plain()` to generate a plain-text table and outputs it
+#' as-is within the document.
+#'
+#' @param x A `tableR` object created by \code{\link{format_table}}.
+#' @param ... Additional arguments passed to methods (ignored here).
+#'
+#' @return An object of class \code{knitr_asis}, rendering the table as preformatted text.
+#'
+#' @export
+knit_print.tableR <- function(x, ...) {
+  out <- paste(style_plain(x), collapse = "\n")
+  knitr::asis_output(out)
+}
+
+#' knitr Print Method for `tableR_list` Objects
+#'
+#' This method allows lists of `tableR` formatted tables to render cleanly in `knitr`-based documents
+#' (such as R Markdown). It uses `style_plain()` to generate plain-text tables for each list element.
+#'
+#' @param x A `tableR_list` object created by \code{\link{format_table}}.
+#' @param ... Additional arguments passed to methods (ignored here).
+#'
+#' @return An object of class \code{knitr_asis}, rendering the tables as preformatted text.
+#'
+#' @export
+knit_print.tableR_list <- function(x, ...) {
+  out <- paste(style_plain(x), collapse = "\n")
+  knitr::asis_output(out)
+}
